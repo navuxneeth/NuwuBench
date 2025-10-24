@@ -56,6 +56,16 @@ function loadGame(gameName) {
         case 'sequence-memory': initSequenceMemory(); break;
         case 'aim-trainer': initAimTrainer(); break;
         case 'chimp-test': initChimpTest(); break;
+        case 'word-scramble': initWordScramble(); break;
+        case 'color-match': initColorMatch(); break;
+        case 'typing-accuracy': initTypingAccuracy(); break;
+        case 'reflex-test': initReflexTest(); break;
+        case 'stroop-test': initStroopTest(); break;
+        case 'verbal-memory': initVerbalMemory(); break;
+        case 'number-sequence': initNumberSequence(); break;
+        case 'typing-rhythm': initTypingRhythm(); break;
+        case 'multi-task': initMultiTask(); break;
+        case 'countdown-challenge': initCountdownChallenge(); break;
     }
 }
 
@@ -1520,3 +1530,715 @@ function startChimpTest() {
     document.getElementById('chimp-count').textContent = count;
     startRound();
 }
+
+// 16. Word Scramble
+function initWordScramble() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Word Scramble</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="scramble-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="scramble-time">30</span>
+            </div>
+        </div>
+        <div id="scramble-word" class="test-area" style="font-size: 64px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="text" id="scramble-input" placeholder="Type the unscrambled word" style="width: 400px; font-size: 32px; text-align: center;">
+        </div>
+    `;
+    
+    const words = ['javascript', 'programming', 'computer', 'keyboard', 'algorithm', 'function', 'variable', 'database', 'network', 'software', 'hardware', 'browser', 'server', 'client', 'development'];
+    let score = 0;
+    let timeLeft = 30;
+    let currentWord = '';
+    let scrambled = '';
+    
+    function scrambleWord(word) {
+        const arr = word.split('');
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr.join('');
+    }
+    
+    function newWord() {
+        currentWord = words[Math.floor(Math.random() * words.length)];
+        scrambled = scrambleWord(currentWord);
+        while (scrambled === currentWord) {
+            scrambled = scrambleWord(currentWord);
+        }
+        document.getElementById('scramble-word').textContent = scrambled.toUpperCase();
+        document.getElementById('scramble-input').value = '';
+        document.getElementById('scramble-input').focus();
+    }
+    
+    const input = document.getElementById('scramble-input');
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            if (input.value.toLowerCase() === currentWord) {
+                score++;
+                document.getElementById('scramble-score').textContent = score;
+                newWord();
+            } else {
+                input.style.borderColor = 'red';
+                setTimeout(() => { input.style.borderColor = ''; }, 500);
+            }
+        }
+    });
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('scramble-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            input.disabled = true;
+            document.getElementById('scramble-word').textContent = `Game Over! Score: ${score}`;
+        }
+    }, 1000);
+    
+    newWord();
+}
+
+// 17. Color Match
+function initColorMatch() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Match</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Click YES if the text matches the color, NO if it doesn't
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="color-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="color-round">0/20</span>
+            </div>
+        </div>
+        <div id="color-display" class="test-area" style="font-size: 72px; font-weight: bold;"></div>
+        <div style="text-align: center;">
+            <button id="color-yes" style="font-size: 32px; padding: 20px 40px; margin: 10px;">YES</button>
+            <button id="color-no" style="font-size: 32px; padding: 20px 40px; margin: 10px;">NO</button>
+        </div>
+    `;
+    
+    const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW', 'ORANGE', 'PURPLE', 'PINK'];
+    const colorCodes = {
+        'RED': '#ff0000',
+        'BLUE': '#0000ff',
+        'GREEN': '#00ff00',
+        'YELLOW': '#ffff00',
+        'ORANGE': '#ffa500',
+        'PURPLE': '#800080',
+        'PINK': '#ffc0cb'
+    };
+    let score = 0;
+    let round = 0;
+    let isMatch = false;
+    
+    function newRound() {
+        if (round >= 20) {
+            document.getElementById('color-display').textContent = `Game Complete! Score: ${score}/20`;
+            document.getElementById('color-yes').disabled = true;
+            document.getElementById('color-no').disabled = true;
+            return;
+        }
+        
+        round++;
+        document.getElementById('color-round').textContent = `${round}/20`;
+        
+        const wordColor = colors[Math.floor(Math.random() * colors.length)];
+        const displayColor = colors[Math.floor(Math.random() * colors.length)];
+        isMatch = wordColor === displayColor;
+        
+        const display = document.getElementById('color-display');
+        display.textContent = wordColor;
+        display.style.color = colorCodes[displayColor];
+    }
+    
+    document.getElementById('color-yes').onclick = () => {
+        if (isMatch) score++;
+        document.getElementById('color-score').textContent = score;
+        newRound();
+    };
+    
+    document.getElementById('color-no').onclick = () => {
+        if (!isMatch) score++;
+        document.getElementById('color-score').textContent = score;
+        newRound();
+    };
+    
+    newRound();
+}
+
+// 18. Typing Accuracy
+function initTypingAccuracy() {
+    const container = document.getElementById('game-container');
+    const sampleText = "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump!";
+    
+    container.innerHTML = `
+        <h2 class="game-title">Typing Accuracy Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="acc-accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Errors:</span>
+                <span class="stat-value" id="acc-errors">0</span>
+            </div>
+        </div>
+        <div class="test-area">
+            <div id="acc-sample" style="font-size: 24px; color: var(--text-secondary); margin-bottom: 20px;">${sampleText}</div>
+            <textarea id="acc-input" class="code-editor" placeholder="Start typing here..." style="min-height: 150px;"></textarea>
+        </div>
+    `;
+    
+    const input = document.getElementById('acc-input');
+    input.addEventListener('input', () => {
+        const typed = input.value;
+        let errors = 0;
+        
+        for (let i = 0; i < typed.length; i++) {
+            if (typed[i] !== sampleText[i]) {
+                errors++;
+            }
+        }
+        
+        const accuracy = typed.length > 0 ? Math.round(((typed.length - errors) / typed.length) * 100) : 100;
+        document.getElementById('acc-accuracy').textContent = accuracy + '%';
+        document.getElementById('acc-errors').textContent = errors;
+        
+        if (typed === sampleText) {
+            input.disabled = true;
+            input.value = `Perfect! 100% accuracy with ${sampleText.length} characters!`;
+        }
+    });
+    
+    input.focus();
+}
+
+// 19. Reflex Test
+function initReflexTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Reflex Test</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Press SPACEBAR when the screen turns GREEN
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Average Time:</span>
+                <span class="stat-value" id="reflex-avg">0ms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="reflex-round">0/5</span>
+            </div>
+        </div>
+        <div id="reflex-area" class="click-area" style="background-color: var(--error-bg); font-size: 48px;">
+            Press SPACEBAR when ready
+        </div>
+    `;
+    
+    const area = document.getElementById('reflex-area');
+    let round = 0;
+    let times = [];
+    let startTime;
+    let waiting = false;
+    let ready = true;
+    
+    function startRound() {
+        if (round >= 5) {
+            const avg = times.reduce((a, b) => a + b, 0) / times.length;
+            area.textContent = `Complete! Average: ${avg.toFixed(0)}ms`;
+            area.style.backgroundColor = 'var(--bg-secondary)';
+            return;
+        }
+        
+        area.style.backgroundColor = 'var(--error-bg)';
+        area.textContent = 'Wait...';
+        waiting = true;
+        ready = false;
+        
+        setTimeout(() => {
+            area.style.backgroundColor = 'var(--success-bg)';
+            area.textContent = 'GO!';
+            startTime = Date.now();
+            waiting = false;
+            ready = true;
+        }, 2000 + Math.random() * 3000);
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && currentGame === 'reflex-test') {
+            e.preventDefault();
+            if (waiting) {
+                area.textContent = 'Too early! Wait for GREEN';
+                setTimeout(() => {
+                    if (round < 5) startRound();
+                }, 2000);
+            } else if (ready) {
+                const reactionTime = Date.now() - startTime;
+                times.push(reactionTime);
+                round++;
+                document.getElementById('reflex-round').textContent = `${round}/5`;
+                const avg = times.reduce((a, b) => a + b, 0) / times.length;
+                document.getElementById('reflex-avg').textContent = avg.toFixed(0) + 'ms';
+                ready = false;
+                setTimeout(() => startRound(), 1000);
+            }
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && round === 0 && !waiting && !ready) {
+            e.preventDefault();
+            startRound();
+        }
+    });
+}
+
+// 20. Stroop Test
+function initStroopTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Stroop Test</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Select the COLOR of the text, not the word itself
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="stroop-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="stroop-round">0/15</span>
+            </div>
+        </div>
+        <div id="stroop-word" class="test-area" style="font-size: 80px; font-weight: bold;"></div>
+        <div class="answer-options" id="stroop-options"></div>
+    `;
+    
+    const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW'];
+    const colorCodes = { 'RED': '#ff0000', 'BLUE': '#0000ff', 'GREEN': '#00ff00', 'YELLOW': '#ffff00' };
+    let score = 0;
+    let round = 0;
+    let correctColor;
+    
+    function newRound() {
+        if (round >= 15) {
+            document.getElementById('stroop-word').textContent = `Complete! Score: ${score}/15`;
+            document.getElementById('stroop-options').innerHTML = '';
+            return;
+        }
+        
+        round++;
+        document.getElementById('stroop-round').textContent = `${round}/15`;
+        
+        const wordText = colors[Math.floor(Math.random() * colors.length)];
+        correctColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        const wordEl = document.getElementById('stroop-word');
+        wordEl.textContent = wordText;
+        wordEl.style.color = colorCodes[correctColor];
+        
+        const options = colors.map(color => 
+            `<div class="answer-option" onclick="checkStroopAnswer('${color}')">${color}</div>`
+        ).join('');
+        document.getElementById('stroop-options').innerHTML = options;
+    }
+    
+    window.checkStroopAnswer = function(selected) {
+        if (selected === correctColor) {
+            score++;
+            document.getElementById('stroop-score').textContent = score;
+        }
+        setTimeout(newRound, 500);
+    };
+    
+    newRound();
+}
+
+// 21. Verbal Memory
+function initVerbalMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Verbal Memory</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Click SEEN if you've seen the word before, NEW if it's new
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="verbal-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="verbal-lives">3</span>
+            </div>
+        </div>
+        <div id="verbal-word" class="test-area" style="font-size: 64px;"></div>
+        <div style="text-align: center;">
+            <button id="verbal-seen" style="font-size: 32px; padding: 20px 40px; margin: 10px;">SEEN</button>
+            <button id="verbal-new" style="font-size: 32px; padding: 20px 40px; margin: 10px;">NEW</button>
+        </div>
+    `;
+    
+    const wordList = ['apple', 'banana', 'car', 'dog', 'elephant', 'flower', 'guitar', 'house', 'island', 'jacket', 'kite', 'lamp', 'mountain', 'notebook', 'ocean', 'piano', 'queen', 'river', 'sun', 'tree', 'umbrella', 'violin', 'window', 'xylophone', 'yacht', 'zebra'];
+    let seenWords = [];
+    let score = 0;
+    let lives = 3;
+    let currentWord = '';
+    let isSeen = false;
+    
+    function newWord() {
+        if (lives <= 0) {
+            document.getElementById('verbal-word').textContent = `Game Over! Score: ${score}`;
+            document.getElementById('verbal-seen').disabled = true;
+            document.getElementById('verbal-new').disabled = true;
+            return;
+        }
+        
+        if (Math.random() < 0.3 && seenWords.length > 0) {
+            currentWord = seenWords[Math.floor(Math.random() * seenWords.length)];
+            isSeen = true;
+        } else {
+            const availableWords = wordList.filter(w => !seenWords.includes(w));
+            if (availableWords.length === 0) {
+                document.getElementById('verbal-word').textContent = `Complete! Score: ${score}`;
+                document.getElementById('verbal-seen').disabled = true;
+                document.getElementById('verbal-new').disabled = true;
+                return;
+            }
+            currentWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+            seenWords.push(currentWord);
+            isSeen = false;
+        }
+        
+        document.getElementById('verbal-word').textContent = currentWord;
+    }
+    
+    document.getElementById('verbal-seen').onclick = () => {
+        if (isSeen) {
+            score++;
+            document.getElementById('verbal-score').textContent = score;
+        } else {
+            lives--;
+            document.getElementById('verbal-lives').textContent = lives;
+        }
+        newWord();
+    };
+    
+    document.getElementById('verbal-new').onclick = () => {
+        if (!isSeen) {
+            score++;
+            document.getElementById('verbal-score').textContent = score;
+        } else {
+            lives--;
+            document.getElementById('verbal-lives').textContent = lives;
+        }
+        newWord();
+    };
+    
+    newWord();
+}
+
+// 22. Number Sequence
+function initNumberSequence() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Number Sequence</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="numseq-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="numseq-score">0</span>
+            </div>
+        </div>
+        <div id="numseq-display" class="test-area" style="font-size: 48px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="numseq-input" placeholder="Next number" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+    `;
+    
+    let level = 1;
+    let score = 0;
+    
+    function generateSequence() {
+        const type = Math.floor(Math.random() * 3);
+        let sequence, answer;
+        
+        if (type === 0) {
+            // Arithmetic
+            const start = Math.floor(Math.random() * 10) + 1;
+            const diff = Math.floor(Math.random() * 5) + 1;
+            sequence = [start, start + diff, start + 2*diff, start + 3*diff];
+            answer = start + 4*diff;
+        } else if (type === 1) {
+            // Geometric
+            const start = Math.floor(Math.random() * 3) + 2;
+            const ratio = Math.floor(Math.random() * 2) + 2;
+            sequence = [start, start * ratio, start * ratio * ratio, start * ratio * ratio * ratio];
+            answer = start * Math.pow(ratio, 4);
+        } else {
+            // Fibonacci-like
+            const a = Math.floor(Math.random() * 5) + 1;
+            const b = Math.floor(Math.random() * 5) + 1;
+            sequence = [a, b, a+b, a+2*b];
+            answer = 2*a + 3*b;
+        }
+        
+        document.getElementById('numseq-display').textContent = sequence.join(', ') + ', ?';
+        document.getElementById('numseq-input').value = '';
+        document.getElementById('numseq-input').focus();
+        
+        return answer;
+    }
+    
+    let currentAnswer = generateSequence();
+    
+    document.getElementById('numseq-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const userAnswer = parseInt(document.getElementById('numseq-input').value);
+            if (userAnswer === currentAnswer) {
+                score += level * 10;
+                level++;
+                document.getElementById('numseq-level').textContent = level;
+                document.getElementById('numseq-score').textContent = score;
+                currentAnswer = generateSequence();
+            } else {
+                document.getElementById('numseq-display').textContent = `Game Over! Score: ${score}`;
+                document.getElementById('numseq-input').disabled = true;
+            }
+        }
+    });
+}
+
+// 23. Typing Rhythm
+function initTypingRhythm() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Typing Rhythm</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Type characters at a steady pace - keep the bar in the green zone!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="rhythm-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Consistency:</span>
+                <span class="stat-value" id="rhythm-consistency">0%</span>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div id="rhythm-fill" class="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <textarea id="rhythm-input" class="code-editor" placeholder="Start typing anything at a steady pace..." style="min-height: 150px;"></textarea>
+        </div>
+    `;
+    
+    const input = document.getElementById('rhythm-input');
+    let lastKeyTime = 0;
+    let intervals = [];
+    let score = 0;
+    
+    input.addEventListener('keydown', () => {
+        const now = Date.now();
+        if (lastKeyTime > 0) {
+            const interval = now - lastKeyTime;
+            intervals.push(interval);
+            
+            if (intervals.length > 20) intervals.shift();
+            
+            if (intervals.length > 5) {
+                const avg = intervals.reduce((a, b) => a + b) / intervals.length;
+                const variance = intervals.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / intervals.length;
+                const stdDev = Math.sqrt(variance);
+                const consistency = Math.max(0, 100 - (stdDev / avg) * 100);
+                
+                document.getElementById('rhythm-consistency').textContent = consistency.toFixed(0) + '%';
+                document.getElementById('rhythm-fill').style.width = consistency + '%';
+                
+                if (consistency > 70) {
+                    score++;
+                    document.getElementById('rhythm-score').textContent = score;
+                }
+            }
+        }
+        lastKeyTime = now;
+    });
+    
+    input.focus();
+}
+
+// 24. Multi-Task Test
+function initMultiTask() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Multi-Task Test</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Click the targets AND type the shown text simultaneously!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Clicks:</span>
+                <span class="stat-value" id="multi-clicks">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Typed:</span>
+                <span class="stat-value" id="multi-typed">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="multi-time">30</span>
+            </div>
+        </div>
+        <div class="click-area" id="multi-area" style="height: 300px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <div id="multi-text" style="font-size: 28px; color: var(--text-secondary); margin-bottom: 10px;">The quick brown fox jumps</div>
+            <input type="text" id="multi-input" placeholder="Type here..." style="width: 400px; font-size: 24px; text-align: center;">
+        </div>
+    `;
+    
+    const area = document.getElementById('multi-area');
+    const input = document.getElementById('multi-input');
+    const targetText = "The quick brown fox jumps";
+    let clicks = 0;
+    let timeLeft = 30;
+    let targetCount = 0;
+    
+    function spawnTarget() {
+        if (timeLeft <= 0) return;
+        
+        const target = document.createElement('div');
+        target.className = 'circle-target';
+        target.style.width = '60px';
+        target.style.height = '60px';
+        target.style.left = Math.random() * (area.clientWidth - 60) + 'px';
+        target.style.top = Math.random() * (area.clientHeight - 60) + 'px';
+        area.appendChild(target);
+        
+        target.onclick = () => {
+            clicks++;
+            document.getElementById('multi-clicks').textContent = clicks;
+            target.remove();
+            targetCount--;
+        };
+        
+        targetCount++;
+        setTimeout(() => {
+            if (target.parentNode) {
+                target.remove();
+                targetCount--;
+            }
+        }, 3000);
+    }
+    
+    input.addEventListener('input', () => {
+        const typed = input.value;
+        document.getElementById('multi-typed').textContent = typed.length;
+        
+        if (typed === targetText) {
+            input.value = '';
+        }
+    });
+    
+    const spawnInterval = setInterval(() => {
+        if (timeLeft > 0 && targetCount < 3) {
+            spawnTarget();
+        }
+    }, 1500);
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('multi-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            clearInterval(spawnInterval);
+            input.disabled = true;
+            area.innerHTML = `<div style="text-align: center; padding-top: 100px; font-size: 32px;">
+                Test Complete!<br>Clicks: ${clicks}<br>Characters Typed: ${document.getElementById('multi-typed').textContent}
+            </div>`;
+        }
+    }, 1000);
+    
+    input.focus();
+}
+
+// 25. Countdown Challenge
+function initCountdownChallenge() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Countdown Challenge</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Type the countdown as fast as you can!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="countdown-time">0.0s</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Current:</span>
+                <span class="stat-value" id="countdown-current">100</span>
+            </div>
+        </div>
+        <div class="test-area">
+            <div style="font-size: 48px; color: var(--text-accent); margin-bottom: 20px;">
+                Type numbers from <span id="countdown-start">100</span> to 0
+            </div>
+            <input type="number" id="countdown-input" placeholder="Type here" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+    `;
+    
+    const startNum = 100;
+    let current = startNum;
+    let startTime;
+    const input = document.getElementById('countdown-input');
+    
+    input.addEventListener('input', () => {
+        if (!startTime) {
+            startTime = Date.now();
+            const timer = setInterval(() => {
+                if (current < 0) {
+                    clearInterval(timer);
+                    return;
+                }
+                const elapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('countdown-time').textContent = elapsed.toFixed(1) + 's';
+            }, 100);
+        }
+        
+        const value = parseInt(input.value);
+        if (value === current) {
+            current--;
+            document.getElementById('countdown-current').textContent = current;
+            input.value = '';
+            
+            if (current < 0) {
+                const elapsed = (Date.now() - startTime) / 1000;
+                input.disabled = true;
+                document.querySelector('.test-area div').textContent = `Complete! Time: ${elapsed.toFixed(2)}s`;
+            }
+        }
+    });
+    
+    input.focus();
+}
+
