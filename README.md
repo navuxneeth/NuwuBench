@@ -1,12 +1,13 @@
 # NuwuBench
 
-A retro-styled human benchmark testing website featuring 15 interactive games to test various cognitive and motor skills.
+A retro-styled human benchmark testing website featuring 25 interactive games to test various cognitive and motor skills.
 
 ## Features
 
 - **VT323 Retro Font**: Authentic pixel-style monospace typography
-- **Vintage Color Scheme**: Warm oranges, browns, and yellows for a nostalgic feel
-- **15 Unique Tests**: Comprehensive collection of human capability benchmarks
+- **Theme Switcher**: Toggle between dark mode (default) and light mode
+- **Auto-Start Games**: Games begin as soon as you start interacting - no START buttons needed!
+- **25 Unique Tests**: Comprehensive collection of human capability benchmarks
 - **Fully Customizable**: Adjustable difficulty, duration, and settings for all tests
 - **Local Records**: Track your best scores and performances
 - **Responsive Design**: Works on desktop and mobile devices
@@ -58,28 +59,79 @@ Click targets that appear randomly on screen. Adjustable target size and count t
 ### 15. Chimp Test
 Click numbers in ascending order before they disappear. Inspired by chimpanzee intelligence tests. Progressive difficulty.
 
+### 16. Word Scramble
+Unscramble words as quickly as possible. Tests vocabulary and pattern recognition under time pressure.
+
+### 17. Color Match
+Identify if the text color matches the word shown. Tests attention to detail and quick decision making.
+
+### 18. Typing Accuracy
+Focus purely on accuracy rather than speed. Type the sample text perfectly to complete the test.
+
+### 19. Reflex Test
+Press spacebar when the screen turns green. Measures pure reaction time without cursor movement.
+
+### 20. Stroop Test
+Click the color of the text, not what the word says. Classic cognitive test for mental flexibility.
+
+### 21. Verbal Memory
+Remember which words you've seen before. Tests short-term verbal memory and recognition.
+
+### 22. Number Sequence
+Identify the pattern and continue the number sequence. Tests mathematical reasoning and pattern recognition.
+
+### 23. Typing Rhythm
+Maintain a consistent typing speed. Tests motor control and rhythm consistency.
+
+### 24. Multi-Task Test
+Click targets AND type text simultaneously. Tests ability to multitask under pressure.
+
+### 25. Countdown Challenge
+Type numbers in descending order as fast as possible. Tests speed and accuracy under pressure.
+
 ## How to Use
 
 1. Open `index.html` in a web browser
 2. Select a game from the main menu
-3. Adjust settings as desired
-4. Click START to begin
-5. Use the "Back to Menu" button to return to game selection
+3. **No START button needed!** Games automatically begin when you:
+   - Click in the game area
+   - Start typing
+   - Press a key
+   - Or simply interact with the game
+4. Use the "Back to Menu" button to return to game selection
+5. Toggle between light and dark themes using the button in the header
+
+## Theme Switcher
+
+Click the theme toggle button in the top right corner to switch between:
+- **Dark Mode** (default): Easy on the eyes with warm retro colors
+- **Light Mode**: Clean and bright interface for daytime use
+
+Your theme preference is saved automatically in your browser.
 
 ## Technologies Used
 
 - HTML5
-- CSS3
+- CSS3 (with CSS Variables for theming)
 - Vanilla JavaScript
 - VT323 Google Font
+- Local Storage for preferences and records
 
 ## Color Palette
 
+### Dark Theme (Default)
 - Background: `#2b2b2b` (Dark Gray)
 - Primary: `#ffa07a` (Light Salmon)
 - Secondary: `#dda15e` (Sandy Brown)
 - Accent: `#8b4513` (Saddle Brown)
 - Text: `#f0e68c` (Khaki)
+
+### Light Theme
+- Background: `#f5f5f5` (Light Gray)
+- Cards: `#ffffff` (White)
+- Primary: `#d2691e` (Chocolate)
+- Secondary: `#8b4513` (Saddle Brown)
+- Text: `#2b2b2b` (Dark Gray)
 
 ## License
 
