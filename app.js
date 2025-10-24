@@ -1,3 +1,31 @@
+// Theme management
+function toggleTheme() {
+    const body = document.body;
+    const button = document.getElementById('theme-toggle');
+    
+    if (body.classList.contains('light-theme')) {
+        body.classList.remove('light-theme');
+        button.textContent = '☀️ Light Mode';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        body.classList.add('light-theme');
+        button.textContent = '🌙 Dark Mode';
+        localStorage.setItem('theme', 'light');
+    }
+}
+
+// Load saved theme on page load
+window.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    const body = document.body;
+    const button = document.getElementById('theme-toggle');
+    
+    if (savedTheme === 'light') {
+        body.classList.add('light-theme');
+        button.textContent = '🌙 Dark Mode';
+    }
+});
+
 // Game state management
 let currentGame = null;
 let gameData = {};
