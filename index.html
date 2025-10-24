@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NuwuBench - Human Benchmark Tests</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="title">NuwuBench</h1>
+            <p class="subtitle">Test Your Human Capabilities</p>
+        </header>
+
+        <main id="main-content">
+            <div class="game-grid" id="game-menu">
+                <div class="game-card" onclick="loadGame('click-speed')">
+                    <h3>Click Speed Test</h3>
+                    <p>Test your clicking speed</p>
+                </div>
+                <div class="game-card" onclick="loadGame('type-speed')">
+                    <h3>Type Speed Test</h3>
+                    <p>Measure your typing speed</p>
+                </div>
+                <div class="game-card" onclick="loadGame('reaction-mouse')">
+                    <h3>Reaction Test (Mouse)</h3>
+                    <p>Click circles as fast as you can</p>
+                </div>
+                <div class="game-card" onclick="loadGame('reaction-key')">
+                    <h3>Reaction Test (Key)</h3>
+                    <p>Press the shown letter quickly</p>
+                </div>
+                <div class="game-card" onclick="loadGame('memory')">
+                    <h3>Memory Test</h3>
+                    <p>Remember the sequence</p>
+                </div>
+                <div class="game-card" onclick="loadGame('math')">
+                    <h3>Math Test</h3>
+                    <p>Solve math problems quickly</p>
+                </div>
+                <div class="game-card" onclick="loadGame('circle-draw')">
+                    <h3>Circle Draw Test</h3>
+                    <p>Draw a perfect circle</p>
+                </div>
+                <div class="game-card" onclick="loadGame('programming')">
+                    <h3>Programming Test</h3>
+                    <p>Test your coding knowledge</p>
+                </div>
+                <div class="game-card" onclick="loadGame('tictactoe')">
+                    <h3>Advanced Tic Tac Toe</h3>
+                    <p>Play against AI</p>
+                </div>
+                <div class="game-card" onclick="loadGame('pattern')">
+                    <h3>Pattern Recognition</h3>
+                    <p>Identify patterns</p>
+                </div>
+                <div class="game-card" onclick="loadGame('number-memory')">
+                    <h3>Number Memory</h3>
+                    <p>Remember the number</p>
+                </div>
+                <div class="game-card" onclick="loadGame('visual-memory')">
+                    <h3>Visual Memory</h3>
+                    <p>Remember the squares</p>
+                </div>
+                <div class="game-card" onclick="loadGame('sequence-memory')">
+                    <h3>Sequence Memory</h3>
+                    <p>Follow the sequence</p>
+                </div>
+                <div class="game-card" onclick="loadGame('aim-trainer')">
+                    <h3>Aim Trainer</h3>
+                    <p>Click the targets</p>
+                </div>
+                <div class="game-card" onclick="loadGame('chimp-test')">
+                    <h3>Chimp Test</h3>
+                    <p>Are you smarter than a chimp?</p>
+                </div>
+            </div>
+
+            <div id="game-container" class="hidden"></div>
+        </main>
+
+        <footer>
+            <button class="back-button hidden" id="back-button" onclick="backToMenu()">← Back to Menu</button>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
