@@ -109,15 +109,24 @@ function initClickSpeed() {
             </div>
         </div>
         <div class="click-area" id="click-area">
-            Click START to begin
+            Click here to start!
         </div>
-        <button onclick="startClickTest()">START</button>
         <div class="leaderboard" id="click-leaderboard" style="display:none;">
             <h4>Your Records</h4>
             <div id="click-records"></div>
         </div>
     `;
     loadClickRecords();
+    
+    const clickArea = document.getElementById('click-area');
+    let testStarted = false;
+    
+    clickArea.onclick = () => {
+        if (!testStarted) {
+            testStarted = true;
+            startClickTest();
+        }
+    };
 }
 
 function startClickTest() {
@@ -128,7 +137,7 @@ function startClickTest() {
     let interval;
     
     clickArea.textContent = 'CLICK NOW!';
-    clickArea.style.backgroundColor = '#4a4a4a';
+    clickArea.style.backgroundColor = 'var(--bg-tertiary)';
     
     function updateStats() {
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
@@ -142,7 +151,7 @@ function startClickTest() {
         if (elapsed >= duration) {
             clearInterval(interval);
             clickArea.onclick = null;
-            clickArea.style.backgroundColor = '#3a3a3a';
+            clickArea.style.backgroundColor = 'var(--bg-secondary)';
             clickArea.textContent = `Test Complete! ${clicks} clicks in ${duration}s (${cps} CPS)`;
             saveClickRecord(duration, clicks, parseFloat(cps));
             loadClickRecords();
@@ -220,13 +229,22 @@ function initTypeSpeed() {
             </div>
         </div>
         <div class="test-area">
-            <div id="sample-text" style="font-size: 28px; color: #dda15e; margin-bottom: 20px;"></div>
-            <textarea id="type-input" class="code-editor" placeholder="Click here and start typing..." style="min-height: 150px;"></textarea>
+            <div id="sample-text" style="font-size: 28px; color: var(--text-secondary); margin-bottom: 20px;"></div>
+            <textarea id="type-input" class="code-editor" placeholder="Start typing here to begin..." style="min-height: 150px;"></textarea>
         </div>
-        <button onclick="startTypeTest()">START</button>
     `;
     
     document.getElementById('sample-text').textContent = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+    
+    const input = document.getElementById('type-input');
+    let testStarted = false;
+    
+    input.addEventListener('input', () => {
+        if (!testStarted) {
+            testStarted = true;
+            startTypeTest();
+        }
+    });
 }
 
 function startTypeTest() {
@@ -235,10 +253,6 @@ function startTypeTest() {
     const sampleText = document.getElementById('sample-text').textContent;
     const startTime = Date.now();
     let interval;
-    
-    input.value = '';
-    input.disabled = false;
-    input.focus();
     
     function updateStats() {
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
@@ -301,10 +315,20 @@ function initReactionMouse() {
             </div>
         </div>
         <div class="click-area" id="reaction-area">
-            Click START to begin
+            Click anywhere to start
         </div>
-        <button onclick="startReactionMouse()">START</button>
     `;
+    
+    const area = document.getElementById('reaction-area');
+    let started = false;
+    
+    area.onclick = () => {
+        if (!started) {
+            started = true;
+            area.onclick = null;
+            startReactionMouse();
+        }
+    };
 }
 
 function startReactionMouse() {
@@ -375,11 +399,20 @@ function initReactionKey() {
                 <span class="stat-value" id="key-progress">0/0</span>
             </div>
         </div>
-        <div class="test-area" id="key-area" style="font-size: 120px; color: #ffa07a;">
-            Press START
+        <div class="test-area" id="key-area" style="font-size: 120px; color: var(--text-accent);">
+            Press any key to start
         </div>
-        <button onclick="startReactionKey()">START</button>
     `;
+    
+    let started = false;
+    const startHandler = (e) => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('keydown', startHandler);
+            startReactionKey();
+        }
+    };
+    document.addEventListener('keydown', startHandler);
 }
 
 function startReactionKey() {
@@ -452,9 +485,23 @@ function initMemory() {
             </div>
         </div>
         <div id="memory-grid" class="grid-container"></div>
-        <button onclick="startMemory()">START</button>
-        <div id="memory-message" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+        <div id="memory-message" style="text-align: center; color: var(--text-accent); font-size: 28px; margin-top: 20px;">
+            Click anywhere to start
+        </div>
     `;
+    
+    const grid = document.getElementById('memory-grid');
+    let started = false;
+    
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.getElementById('memory-message').textContent = '';
+            document.removeEventListener('click', startHandler);
+            startMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
 }
 
 function startMemory() {
@@ -572,11 +619,20 @@ function initMath() {
         </div>
         <div id="math-question" class="question"></div>
         <div style="text-align: center; margin: 20px 0;">
-            <input type="number" id="math-answer" placeholder="Your answer" style="width: 200px; font-size: 32px; text-align: center;">
+            <input type="number" id="math-answer" placeholder="Type answer to start" style="width: 200px; font-size: 32px; text-align: center;">
         </div>
-        <button onclick="startMathTest()">START</button>
         <button id="math-submit" onclick="submitMathAnswer()" style="display: none;">SUBMIT</button>
     `;
+    
+    const input = document.getElementById('math-answer');
+    let started = false;
+    
+    input.addEventListener('input', () => {
+        if (!started && input.value) {
+            started = true;
+            startMathTest();
+        }
+    });
 }
 
 function startMathTest() {
@@ -666,9 +722,12 @@ function initCircleDraw() {
         <div style="text-align: center; margin: 20px 0;">
             <canvas id="circle-canvas" width="600" height="600"></canvas>
         </div>
-        <button onclick="startCircleDraw()">START</button>
-        <div id="circle-result" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+        <div id="circle-result" style="text-align: center; color: var(--text-accent); font-size: 28px; margin-top: 20px;">
+            Draw a circle with your mouse
+        </div>
     `;
+    
+    startCircleDraw();
 }
 
 function startCircleDraw() {
@@ -678,7 +737,7 @@ function startCircleDraw() {
     let points = [];
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = '#ffa07a';
+    ctx.strokeStyle = 'var(--text-accent)';
     ctx.lineWidth = 3;
     
     canvas.onmousedown = (e) => {
@@ -732,7 +791,7 @@ function startCircleDraw() {
         variance /= points.length;
         
         // Draw perfect circle
-        ctx.strokeStyle = '#dda15e';
+        ctx.strokeStyle = 'var(--text-secondary)';
         ctx.beginPath();
         ctx.arc(centerX, centerY, avgRadius, 0, 2 * Math.PI);
         ctx.stroke();
@@ -805,56 +864,100 @@ function initProgramming() {
             </div>
         </div>
         <div id="prog-quiz"></div>
-        <button onclick="startProgramming()">START</button>
     `;
     
-    window.startProgramming = function() {
-        let currentQ = 0;
-        let score = 0;
-        
-        function showQuestion() {
-            if (currentQ >= questions.length) {
-                document.getElementById('prog-quiz').innerHTML = `
-                    <div class="results">
-                        <h3>Quiz Complete!</h3>
-                        <div class="score">Score: ${score}/${questions.length}</div>
-                        <p>${(score / questions.length * 100).toFixed(0)}% Correct</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const q = questions[currentQ];
-            document.getElementById('prog-question-num').textContent = `${currentQ + 1}/${questions.length}`;
-            
-            let html = `<div class="question">${q.question}</div><div class="answer-options">`;
-            q.answers.forEach((answer, i) => {
-                html += `<div class="answer-option" onclick="checkProgrammingAnswer(${i})">${answer}</div>`;
-            });
-            html += `</div>`;
-            document.getElementById('prog-quiz').innerHTML = html;
+    startProgramming();
+}
+
+function startProgramming() {
+    const questions = [
+        {
+            question: "What does HTML stand for?",
+            answers: ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"],
+            correct: 0
+        },
+        {
+            question: "Which operator is used for assignment in JavaScript?",
+            answers: ["==", "=", "===", "=>"],
+            correct: 1
+        },
+        {
+            question: "What is the correct way to declare a variable in JavaScript?",
+            answers: ["var x;", "variable x;", "v x;", "dim x;"],
+            correct: 0
+        },
+        {
+            question: "Which language is primarily used for styling web pages?",
+            answers: ["HTML", "JavaScript", "CSS", "Python"],
+            correct: 2
+        },
+        {
+            question: "What does CSS stand for?",
+            answers: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style Sheets", "Colorful Style Sheets"],
+            correct: 1
+        },
+        {
+            question: "Which symbol is used for single-line comments in JavaScript?",
+            answers: ["//", "/*", "#", "--"],
+            correct: 0
+        },
+        {
+            question: "What is the output of: console.log(typeof [])?",
+            answers: ["array", "object", "list", "undefined"],
+            correct: 1
+        },
+        {
+            question: "Which method adds an element to the end of an array?",
+            answers: ["push()", "pop()", "shift()", "unshift()"],
+            correct: 0
+        }
+    ];
+    
+    let currentQ = 0;
+    let score = 0;
+    
+    function showQuestion() {
+        if (currentQ >= questions.length) {
+            document.getElementById('prog-quiz').innerHTML = `
+                <div class="results">
+                    <h3>Quiz Complete!</h3>
+                    <div class="score">Score: ${score}/${questions.length}</div>
+                    <p>${(score / questions.length * 100).toFixed(0)}% Correct</p>
+                </div>
+            `;
+            return;
         }
         
-        window.checkProgrammingAnswer = function(selected) {
-            const q = questions[currentQ];
-            const options = document.querySelectorAll('.answer-option');
-            
-            options[selected].classList.add(selected === q.correct ? 'correct' : 'incorrect');
-            options[q.correct].classList.add('correct');
-            
-            if (selected === q.correct) {
-                score++;
-                document.getElementById('prog-score').textContent = score;
-            }
-            
-            setTimeout(() => {
-                currentQ++;
-                showQuestion();
-            }, 1500);
-        };
+        const q = questions[currentQ];
+        document.getElementById('prog-question-num').textContent = `${currentQ + 1}/${questions.length}`;
         
-        showQuestion();
+        let html = `<div class="question">${q.question}</div><div class="answer-options">`;
+        q.answers.forEach((answer, i) => {
+            html += `<div class="answer-option" onclick="checkProgrammingAnswer(${i})">${answer}</div>`;
+        });
+        html += `</div>`;
+        document.getElementById('prog-quiz').innerHTML = html;
+    }
+    
+    window.checkProgrammingAnswer = function(selected) {
+        const q = questions[currentQ];
+        const options = document.querySelectorAll('.answer-option');
+        
+        options[selected].classList.add(selected === q.correct ? 'correct' : 'incorrect');
+        options[q.correct].classList.add('correct');
+        
+        if (selected === q.correct) {
+            score++;
+            document.getElementById('prog-score').textContent = score;
+        }
+        
+        setTimeout(() => {
+            currentQ++;
+            showQuestion();
+        }, 1500);
     };
+    
+    showQuestion();
 }
 
 // 9. Advanced Tic Tac Toe
@@ -888,9 +991,12 @@ function initTicTacToe() {
             </div>
         </div>
         <div id="ttt-grid" class="grid-container"></div>
-        <button onclick="startTicTacToe()">NEW GAME</button>
-        <div id="ttt-message" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+        <div id="ttt-message" style="text-align: center; color: var(--text-accent); font-size: 28px; margin-top: 20px;">
+            Click any cell to start new game
+        </div>
     `;
+    
+    startTicTacToe();
 }
 
 function startTicTacToe() {
@@ -1039,8 +1145,9 @@ function initPattern() {
         </div>
         <div id="pattern-display" class="test-area" style="font-size: 48px;"></div>
         <div class="answer-options" id="pattern-options"></div>
-        <button onclick="startPattern()">START</button>
     `;
+    
+    startPattern();
 }
 
 function startPattern() {
@@ -1123,9 +1230,21 @@ function initNumberMemory() {
         <div style="text-align: center;">
             <input type="number" id="num-input" placeholder="Enter the number" style="width: 300px; font-size: 32px; text-align: center; display: none;">
         </div>
-        <button onclick="startNumberMemory()">START</button>
         <button id="num-submit" onclick="submitNumber()" style="display: none;">SUBMIT</button>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px; margin-top: 20px;">
+            Click anywhere to start
+        </div>
     `;
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startNumberMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
 }
 
 function startNumberMemory() {
@@ -1184,8 +1303,20 @@ function initVisualMemory() {
             </div>
         </div>
         <div id="vis-grid" class="grid-container"></div>
-        <button onclick="startVisualMemory()">START</button>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px; margin-top: 20px;">
+            Click anywhere to start
+        </div>
     `;
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startVisualMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
 }
 
 function startVisualMemory() {
@@ -1271,8 +1402,20 @@ function initSequenceMemory() {
             </div>
         </div>
         <div id="seq-grid" class="grid-container"></div>
-        <button onclick="startSequenceMemory()">START</button>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px; margin-top: 20px;">
+            Click anywhere to start
+        </div>
     `;
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startSequenceMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
 }
 
 function startSequenceMemory() {
@@ -1380,9 +1523,19 @@ function initAimTrainer() {
                 <span class="stat-value" id="aim-progress">0/0</span>
             </div>
         </div>
-        <div class="click-area" id="aim-area">Click START to begin</div>
-        <button onclick="startAimTrainer()">START</button>
+        <div class="click-area" id="aim-area">Click anywhere to start</div>
     `;
+    
+    const area = document.getElementById('aim-area');
+    let started = false;
+    
+    area.onclick = () => {
+        if (!started) {
+            started = true;
+            area.onclick = null;
+            startAimTrainer();
+        }
+    };
 }
 
 function startAimTrainer() {
@@ -1445,9 +1598,19 @@ function initChimpTest() {
                 <span class="stat-value" id="chimp-count">4</span>
             </div>
         </div>
-        <div class="click-area" id="chimp-area" style="height: 500px;">Click START to begin</div>
-        <button onclick="startChimpTest()">START</button>
+        <div class="click-area" id="chimp-area" style="height: 500px;">Click anywhere to start</div>
     `;
+    
+    const area = document.getElementById('chimp-area');
+    let started = false;
+    
+    area.onclick = () => {
+        if (!started) {
+            started = true;
+            area.onclick = null;
+            startChimpTest();
+        }
+    };
 }
 
 function startChimpTest() {
