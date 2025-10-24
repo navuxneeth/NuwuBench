@@ -1,0 +1,1494 @@
+// Game state management
+let currentGame = null;
+let gameData = {};
+
+// Navigation
+function loadGame(gameName) {
+    currentGame = gameName;
+    document.getElementById('game-menu').classList.add('hidden');
+    document.getElementById('game-container').classList.remove('hidden');
+    document.getElementById('back-button').classList.remove('hidden');
+    
+    const container = document.getElementById('game-container');
+    container.innerHTML = '';
+    
+    switch(gameName) {
+        case 'click-speed': initClickSpeed(); break;
+        case 'type-speed': initTypeSpeed(); break;
+        case 'reaction-mouse': initReactionMouse(); break;
+        case 'reaction-key': initReactionKey(); break;
+        case 'memory': initMemory(); break;
+        case 'math': initMath(); break;
+        case 'circle-draw': initCircleDraw(); break;
+        case 'programming': initProgramming(); break;
+        case 'tictactoe': initTicTacToe(); break;
+        case 'pattern': initPattern(); break;
+        case 'number-memory': initNumberMemory(); break;
+        case 'visual-memory': initVisualMemory(); break;
+        case 'sequence-memory': initSequenceMemory(); break;
+        case 'aim-trainer': initAimTrainer(); break;
+        case 'chimp-test': initChimpTest(); break;
+    }
+}
+
+function backToMenu() {
+    currentGame = null;
+    gameData = {};
+    document.getElementById('game-menu').classList.remove('hidden');
+    document.getElementById('game-container').classList.add('hidden');
+    document.getElementById('back-button').classList.add('hidden');
+}
+
+// 1. Click Speed Test
+function initClickSpeed() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Click Speed Test</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Duration (seconds):</span>
+                <select id="click-duration">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="30">30</option>
+                    <option value="60">60</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Clicks:</span>
+                <span class="stat-value" id="click-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">CPS:</span>
+                <span class="stat-value" id="cps">0.0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="time-left">0</span>
+            </div>
+        </div>
+        <div class="click-area" id="click-area">
+            Click START to begin
+        </div>
+        <button onclick="startClickTest()">START</button>
+        <div class="leaderboard" id="click-leaderboard" style="display:none;">
+            <h4>Your Records</h4>
+            <div id="click-records"></div>
+        </div>
+    `;
+    loadClickRecords();
+}
+
+function startClickTest() {
+    const duration = parseInt(document.getElementById('click-duration').value);
+    const clickArea = document.getElementById('click-area');
+    let clicks = 0;
+    let startTime = Date.now();
+    let interval;
+    
+    clickArea.textContent = 'CLICK NOW!';
+    clickArea.style.backgroundColor = '#4a4a4a';
+    
+    function updateStats() {
+        const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
+        const timeLeft = Math.max(0, duration - elapsed);
+        const cps = elapsed > 0 ? (clicks / elapsed).toFixed(2) : 0;
+        
+        document.getElementById('click-count').textContent = clicks;
+        document.getElementById('cps').textContent = cps;
+        document.getElementById('time-left').textContent = timeLeft.toFixed(1);
+        
+        if (elapsed >= duration) {
+            clearInterval(interval);
+            clickArea.onclick = null;
+            clickArea.style.backgroundColor = '#3a3a3a';
+            clickArea.textContent = `Test Complete! ${clicks} clicks in ${duration}s (${cps} CPS)`;
+            saveClickRecord(duration, clicks, parseFloat(cps));
+            loadClickRecords();
+        }
+    }
+    
+    clickArea.onclick = () => {
+        clicks++;
+        updateStats();
+    };
+    
+    interval = setInterval(updateStats, 50);
+    updateStats();
+}
+
+function saveClickRecord(duration, clicks, cps) {
+    let records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    records.push({ duration, clicks, cps, date: new Date().toISOString() });
+    records.sort((a, b) => b.cps - a.cps);
+    records = records.slice(0, 10);
+    localStorage.setItem('clickRecords', JSON.stringify(records));
+}
+
+function loadClickRecords() {
+    const records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    const container = document.getElementById('click-records');
+    const leaderboard = document.getElementById('click-leaderboard');
+    
+    if (records.length > 0) {
+        leaderboard.style.display = 'block';
+        container.innerHTML = records.map((r, i) => `
+            <div class="leaderboard-entry">
+                <span class="rank">#${i + 1} - ${r.duration}s</span>
+                <span class="score-display">${r.clicks} clicks (${r.cps.toFixed(2)} CPS)</span>
+            </div>
+        `).join('');
+    }
+}
+
+// 2. Type Speed Test
+function initTypeSpeed() {
+    const container = document.getElementById('game-container');
+    const sampleTexts = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Programming is the art of telling another human what one wants the computer to do.",
+        "In the world of technology, speed and accuracy are key to success.",
+        "Practice makes perfect, especially when it comes to typing skills."
+    ];
+    
+    container.innerHTML = `
+        <h2 class="game-title">Type Speed Test</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Duration (seconds):</span>
+                <select id="type-duration">
+                    <option value="30">30</option>
+                    <option value="60" selected>60</option>
+                    <option value="120">120</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">WPM:</span>
+                <span class="stat-value" id="wpm">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="type-time">0</span>
+            </div>
+        </div>
+        <div class="test-area">
+            <div id="sample-text" style="font-size: 28px; color: #dda15e; margin-bottom: 20px;"></div>
+            <textarea id="type-input" class="code-editor" placeholder="Click here and start typing..." style="min-height: 150px;"></textarea>
+        </div>
+        <button onclick="startTypeTest()">START</button>
+    `;
+    
+    document.getElementById('sample-text').textContent = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+}
+
+function startTypeTest() {
+    const duration = parseInt(document.getElementById('type-duration').value);
+    const input = document.getElementById('type-input');
+    const sampleText = document.getElementById('sample-text').textContent;
+    const startTime = Date.now();
+    let interval;
+    
+    input.value = '';
+    input.disabled = false;
+    input.focus();
+    
+    function updateStats() {
+        const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
+        const timeLeft = Math.max(0, duration - elapsed);
+        const typed = input.value;
+        const words = typed.trim().split(/\s+/).length;
+        const wpm = Math.round((words / elapsed) * 60);
+        
+        let correctChars = 0;
+        for (let i = 0; i < Math.min(typed.length, sampleText.length); i++) {
+            if (typed[i] === sampleText[i]) correctChars++;
+        }
+        const accuracy = typed.length > 0 ? Math.round((correctChars / typed.length) * 100) : 100;
+        
+        document.getElementById('wpm').textContent = wpm;
+        document.getElementById('accuracy').textContent = accuracy + '%';
+        document.getElementById('type-time').textContent = timeLeft.toFixed(1);
+        
+        if (elapsed >= duration) {
+            clearInterval(interval);
+            input.disabled = true;
+        }
+    }
+    
+    interval = setInterval(updateStats, 100);
+}
+
+// 3. Reaction Test (Mouse)
+function initReactionMouse() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Reaction Test (Mouse)</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Number of Targets:</span>
+                <select id="target-count">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Delay (ms):</span>
+                <select id="target-delay">
+                    <option value="500">500</option>
+                    <option value="1000" selected>1000</option>
+                    <option value="2000">2000</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Average Time:</span>
+                <span class="stat-value" id="avg-time">0ms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Target:</span>
+                <span class="stat-value" id="target-progress">0/0</span>
+            </div>
+        </div>
+        <div class="click-area" id="reaction-area">
+            Click START to begin
+        </div>
+        <button onclick="startReactionMouse()">START</button>
+    `;
+}
+
+function startReactionMouse() {
+    const count = parseInt(document.getElementById('target-count').value);
+    const delay = parseInt(document.getElementById('target-delay').value);
+    const area = document.getElementById('reaction-area');
+    let currentTarget = 0;
+    let times = [];
+    let appearTime;
+    
+    area.innerHTML = 'Get Ready...';
+    
+    function showTarget() {
+        if (currentTarget >= count) {
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            area.innerHTML = `Test Complete!<br>Average Reaction: ${avgTime.toFixed(0)}ms`;
+            return;
+        }
+        
+        setTimeout(() => {
+            area.innerHTML = '';
+            const circle = document.createElement('div');
+            circle.className = 'circle-target';
+            circle.style.left = Math.random() * (area.clientWidth - 100) + 'px';
+            circle.style.top = Math.random() * (area.clientHeight - 100) + 'px';
+            area.appendChild(circle);
+            appearTime = Date.now();
+            
+            circle.onclick = () => {
+                const reactionTime = Date.now() - appearTime;
+                times.push(reactionTime);
+                currentTarget++;
+                const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+                document.getElementById('avg-time').textContent = avgTime.toFixed(0) + 'ms';
+                document.getElementById('target-progress').textContent = `${currentTarget}/${count}`;
+                showTarget();
+            };
+        }, delay);
+    }
+    
+    document.getElementById('target-progress').textContent = `0/${count}`;
+    showTarget();
+}
+
+// 4. Reaction Test (Keyboard)
+function initReactionKey() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Reaction Test (Keyboard)</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Number of Rounds:</span>
+                <select id="key-rounds">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Average Time:</span>
+                <span class="stat-value" id="key-avg-time">0ms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="key-progress">0/0</span>
+            </div>
+        </div>
+        <div class="test-area" id="key-area" style="font-size: 120px; color: #ffa07a;">
+            Press START
+        </div>
+        <button onclick="startReactionKey()">START</button>
+    `;
+}
+
+function startReactionKey() {
+    const rounds = parseInt(document.getElementById('key-rounds').value);
+    const area = document.getElementById('key-area');
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let currentRound = 0;
+    let times = [];
+    let appearTime;
+    let expectedKey;
+    
+    function showLetter() {
+        if (currentRound >= rounds) {
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            area.style.fontSize = '48px';
+            area.textContent = `Test Complete! Average: ${avgTime.toFixed(0)}ms`;
+            document.removeEventListener('keydown', keyHandler);
+            return;
+        }
+        
+        setTimeout(() => {
+            expectedKey = letters[Math.floor(Math.random() * letters.length)];
+            area.textContent = expectedKey;
+            appearTime = Date.now();
+        }, 1000 + Math.random() * 1000);
+    }
+    
+    function keyHandler(e) {
+        if (e.key.toUpperCase() === expectedKey) {
+            const reactionTime = Date.now() - appearTime;
+            times.push(reactionTime);
+            currentRound++;
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            document.getElementById('key-avg-time').textContent = avgTime.toFixed(0) + 'ms';
+            document.getElementById('key-progress').textContent = `${currentRound}/${rounds}`;
+            showLetter();
+        }
+    }
+    
+    document.addEventListener('keydown', keyHandler);
+    document.getElementById('key-progress').textContent = `0/${rounds}`;
+    area.textContent = 'Get Ready...';
+    showLetter();
+}
+
+// 5. Memory Test
+function initMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Memory Test</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Grid Size:</span>
+                <select id="memory-size">
+                    <option value="3">3x3</option>
+                    <option value="4" selected>4x4</option>
+                    <option value="5">5x5</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="memory-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="memory-score">0</span>
+            </div>
+        </div>
+        <div id="memory-grid" class="grid-container"></div>
+        <button onclick="startMemory()">START</button>
+        <div id="memory-message" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+    `;
+}
+
+function startMemory() {
+    const size = parseInt(document.getElementById('memory-size').value);
+    const grid = document.getElementById('memory-grid');
+    let level = 1;
+    let score = 0;
+    let sequence = [];
+    let playerSequence = [];
+    
+    grid.style.gridTemplateColumns = `repeat(${size}, 80px)`;
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.width = '80px';
+        cell.style.height = '80px';
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    }
+    
+    function playSequence() {
+        document.getElementById('memory-message').textContent = 'Watch the sequence...';
+        const cells = grid.children;
+        playerSequence = [];
+        
+        for (let cell of cells) {
+            cell.onclick = null;
+            cell.classList.remove('active');
+        }
+        
+        const newCell = Math.floor(Math.random() * (size * size));
+        sequence.push(newCell);
+        
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i > 0) cells[sequence[i - 1]].classList.remove('shown');
+            if (i < sequence.length) {
+                cells[sequence[i]].classList.add('shown');
+                i++;
+            } else {
+                clearInterval(interval);
+                cells[sequence[sequence.length - 1]].classList.remove('shown');
+                enableInput();
+            }
+        }, 800);
+    }
+    
+    function enableInput() {
+        document.getElementById('memory-message').textContent = 'Your turn! Repeat the sequence';
+        const cells = grid.children;
+        
+        for (let cell of cells) {
+            cell.onclick = function() {
+                const index = parseInt(this.dataset.index);
+                playerSequence.push(index);
+                this.classList.add('active');
+                setTimeout(() => this.classList.remove('active'), 300);
+                
+                const currentStep = playerSequence.length - 1;
+                if (playerSequence[currentStep] !== sequence[currentStep]) {
+                    document.getElementById('memory-message').textContent = `Game Over! Final Score: ${score}`;
+                    for (let c of cells) c.onclick = null;
+                    return;
+                }
+                
+                if (playerSequence.length === sequence.length) {
+                    score += level * 10;
+                    level++;
+                    document.getElementById('memory-level').textContent = level;
+                    document.getElementById('memory-score').textContent = score;
+                    setTimeout(playSequence, 1000);
+                }
+            };
+        }
+    }
+    
+    playSequence();
+}
+
+// 6. Math Test
+function initMath() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Math Test</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Difficulty:</span>
+                <select id="math-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Time Limit (sec):</span>
+                <select id="math-time">
+                    <option value="30">30</option>
+                    <option value="60" selected>60</option>
+                    <option value="120">120</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="math-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time Left:</span>
+                <span class="stat-value" id="math-timer">0</span>
+            </div>
+        </div>
+        <div id="math-question" class="question"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="math-answer" placeholder="Your answer" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+        <button onclick="startMathTest()">START</button>
+        <button id="math-submit" onclick="submitMathAnswer()" style="display: none;">SUBMIT</button>
+    `;
+}
+
+function startMathTest() {
+    const difficulty = document.getElementById('math-difficulty').value;
+    const timeLimit = parseInt(document.getElementById('math-time').value);
+    let score = 0;
+    let startTime = Date.now();
+    let currentAnswer;
+    
+    document.getElementById('math-submit').style.display = 'inline-block';
+    
+    function generateQuestion() {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const timeLeft = Math.max(0, timeLimit - elapsed);
+        document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
+        
+        if (timeLeft <= 0) {
+            document.getElementById('math-question').textContent = `Time's up! Final Score: ${score}`;
+            document.getElementById('math-answer').disabled = true;
+            document.getElementById('math-submit').style.display = 'none';
+            return;
+        }
+        
+        let a, b, op, question;
+        if (difficulty === 'easy') {
+            a = Math.floor(Math.random() * 20) + 1;
+            b = Math.floor(Math.random() * 20) + 1;
+            op = ['+', '-'][Math.floor(Math.random() * 2)];
+        } else if (difficulty === 'medium') {
+            a = Math.floor(Math.random() * 50) + 10;
+            b = Math.floor(Math.random() * 50) + 10;
+            op = ['+', '-', '*'][Math.floor(Math.random() * 3)];
+        } else {
+            a = Math.floor(Math.random() * 100) + 20;
+            b = Math.floor(Math.random() * 100) + 20;
+            op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
+        }
+        
+        if (op === '+') currentAnswer = a + b;
+        else if (op === '-') currentAnswer = a - b;
+        else if (op === '*') currentAnswer = a * b;
+        else {
+            currentAnswer = Math.floor(a / b);
+            question = `${a} ${op} ${b} (round down)`;
+        }
+        
+        if (!question) question = `${a} ${op} ${b}`;
+        document.getElementById('math-question').textContent = question + ' = ?';
+        document.getElementById('math-answer').value = '';
+        document.getElementById('math-answer').focus();
+    }
+    
+    window.submitMathAnswer = function() {
+        const userAnswer = parseInt(document.getElementById('math-answer').value);
+        if (userAnswer === currentAnswer) {
+            score++;
+            document.getElementById('math-score').textContent = score;
+        }
+        generateQuestion();
+    };
+    
+    document.getElementById('math-answer').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') submitMathAnswer();
+    });
+    
+    const timerInterval = setInterval(() => {
+        const elapsed = (Date.now() - startTime) / 1000;
+        const timeLeft = Math.max(0, timeLimit - elapsed);
+        document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
+        if (timeLeft <= 0) clearInterval(timerInterval);
+    }, 100);
+    
+    generateQuestion();
+}
+
+// 7. Circle Draw Test
+function initCircleDraw() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Circle Draw Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="circle-accuracy">0%</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="circle-canvas" width="600" height="600"></canvas>
+        </div>
+        <button onclick="startCircleDraw()">START</button>
+        <div id="circle-result" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+    `;
+}
+
+function startCircleDraw() {
+    const canvas = document.getElementById('circle-canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let points = [];
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#ffa07a';
+    ctx.lineWidth = 3;
+    
+    canvas.onmousedown = (e) => {
+        drawing = true;
+        points = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const rect = canvas.getBoundingClientRect();
+        points.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
+    
+    canvas.onmousemove = (e) => {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        points.push({ x, y });
+        
+        ctx.beginPath();
+        ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+    };
+    
+    canvas.onmouseup = () => {
+        drawing = false;
+        if (points.length < 10) return;
+        
+        // Calculate center
+        let sumX = 0, sumY = 0;
+        points.forEach(p => { sumX += p.x; sumY += p.y; });
+        const centerX = sumX / points.length;
+        const centerY = sumY / points.length;
+        
+        // Calculate average radius
+        let sumRadius = 0;
+        points.forEach(p => {
+            const dx = p.x - centerX;
+            const dy = p.y - centerY;
+            sumRadius += Math.sqrt(dx * dx + dy * dy);
+        });
+        const avgRadius = sumRadius / points.length;
+        
+        // Calculate variance
+        let variance = 0;
+        points.forEach(p => {
+            const dx = p.x - centerX;
+            const dy = p.y - centerY;
+            const radius = Math.sqrt(dx * dx + dy * dy);
+            variance += Math.pow(radius - avgRadius, 2);
+        });
+        variance /= points.length;
+        
+        // Draw perfect circle
+        ctx.strokeStyle = '#dda15e';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, avgRadius, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // Calculate accuracy
+        const accuracy = Math.max(0, 100 - (Math.sqrt(variance) / avgRadius) * 100);
+        document.getElementById('circle-accuracy').textContent = accuracy.toFixed(1) + '%';
+        document.getElementById('circle-result').textContent = 
+            `Accuracy: ${accuracy.toFixed(1)}% - ${accuracy > 90 ? 'Excellent!' : accuracy > 75 ? 'Good!' : accuracy > 50 ? 'Not bad!' : 'Keep practicing!'}`;
+    };
+}
+
+
+// 8. Programming Test
+function initProgramming() {
+    const container = document.getElementById('game-container');
+    const questions = [
+        {
+            question: "What does HTML stand for?",
+            answers: ["Hyper Text Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyperlinks and Text Markup Language"],
+            correct: 0
+        },
+        {
+            question: "Which operator is used for assignment in JavaScript?",
+            answers: ["==", "=", "===", "=>"],
+            correct: 1
+        },
+        {
+            question: "What is the correct way to declare a variable in JavaScript?",
+            answers: ["var x;", "variable x;", "v x;", "dim x;"],
+            correct: 0
+        },
+        {
+            question: "Which language is primarily used for styling web pages?",
+            answers: ["HTML", "JavaScript", "CSS", "Python"],
+            correct: 2
+        },
+        {
+            question: "What does CSS stand for?",
+            answers: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style Sheets", "Colorful Style Sheets"],
+            correct: 1
+        },
+        {
+            question: "Which symbol is used for single-line comments in JavaScript?",
+            answers: ["//", "/*", "#", "--"],
+            correct: 0
+        },
+        {
+            question: "What is the output of: console.log(typeof [])?",
+            answers: ["array", "object", "list", "undefined"],
+            correct: 1
+        },
+        {
+            question: "Which method adds an element to the end of an array?",
+            answers: ["push()", "pop()", "shift()", "unshift()"],
+            correct: 0
+        }
+    ];
+    
+    container.innerHTML = `
+        <h2 class="game-title">Programming Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Question:</span>
+                <span class="stat-value" id="prog-question-num">1/${questions.length}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="prog-score">0</span>
+            </div>
+        </div>
+        <div id="prog-quiz"></div>
+        <button onclick="startProgramming()">START</button>
+    `;
+    
+    window.startProgramming = function() {
+        let currentQ = 0;
+        let score = 0;
+        
+        function showQuestion() {
+            if (currentQ >= questions.length) {
+                document.getElementById('prog-quiz').innerHTML = `
+                    <div class="results">
+                        <h3>Quiz Complete!</h3>
+                        <div class="score">Score: ${score}/${questions.length}</div>
+                        <p>${(score / questions.length * 100).toFixed(0)}% Correct</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const q = questions[currentQ];
+            document.getElementById('prog-question-num').textContent = `${currentQ + 1}/${questions.length}`;
+            
+            let html = `<div class="question">${q.question}</div><div class="answer-options">`;
+            q.answers.forEach((answer, i) => {
+                html += `<div class="answer-option" onclick="checkProgrammingAnswer(${i})">${answer}</div>`;
+            });
+            html += `</div>`;
+            document.getElementById('prog-quiz').innerHTML = html;
+        }
+        
+        window.checkProgrammingAnswer = function(selected) {
+            const q = questions[currentQ];
+            const options = document.querySelectorAll('.answer-option');
+            
+            options[selected].classList.add(selected === q.correct ? 'correct' : 'incorrect');
+            options[q.correct].classList.add('correct');
+            
+            if (selected === q.correct) {
+                score++;
+                document.getElementById('prog-score').textContent = score;
+            }
+            
+            setTimeout(() => {
+                currentQ++;
+                showQuestion();
+            }, 1500);
+        };
+        
+        showQuestion();
+    };
+}
+
+// 9. Advanced Tic Tac Toe
+function initTicTacToe() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Advanced Tic Tac Toe</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">AI Difficulty:</span>
+                <select id="ttt-difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard (Unbeatable)</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Wins:</span>
+                <span class="stat-value" id="ttt-wins">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Losses:</span>
+                <span class="stat-value" id="ttt-losses">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Draws:</span>
+                <span class="stat-value" id="ttt-draws">0</span>
+            </div>
+        </div>
+        <div id="ttt-grid" class="grid-container"></div>
+        <button onclick="startTicTacToe()">NEW GAME</button>
+        <div id="ttt-message" style="text-align: center; color: #ffa07a; font-size: 28px; margin-top: 20px;"></div>
+    `;
+}
+
+function startTicTacToe() {
+    const grid = document.getElementById('ttt-grid');
+    const difficulty = document.getElementById('ttt-difficulty').value;
+    let board = Array(9).fill('');
+    let playerTurn = true;
+    
+    grid.style.gridTemplateColumns = 'repeat(3, 120px)';
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.width = '120px';
+        cell.style.height = '120px';
+        cell.style.fontSize = '48px';
+        cell.dataset.index = i;
+        cell.onclick = () => makeMove(i);
+        grid.appendChild(cell);
+    }
+    
+    function makeMove(index) {
+        if (!playerTurn || board[index] !== '') return;
+        
+        board[index] = 'X';
+        grid.children[index].textContent = 'X';
+        
+        if (checkWinner('X')) {
+            endGame('You win!');
+            updateStats('wins');
+            return;
+        }
+        
+        if (board.every(cell => cell !== '')) {
+            endGame('Draw!');
+            updateStats('draws');
+            return;
+        }
+        
+        playerTurn = false;
+        setTimeout(aiMove, 500);
+    }
+    
+    function aiMove() {
+        let move;
+        if (difficulty === 'easy') {
+            const empty = board.map((v, i) => v === '' ? i : -1).filter(i => i !== -1);
+            move = empty[Math.floor(Math.random() * empty.length)];
+        } else if (difficulty === 'medium') {
+            move = Math.random() < 0.5 ? findBestMove() : findRandomMove();
+        } else {
+            move = findBestMove();
+        }
+        
+        board[move] = 'O';
+        grid.children[move].textContent = 'O';
+        
+        if (checkWinner('O')) {
+            endGame('AI wins!');
+            updateStats('losses');
+            return;
+        }
+        
+        if (board.every(cell => cell !== '')) {
+            endGame('Draw!');
+            updateStats('draws');
+            return;
+        }
+        
+        playerTurn = true;
+    }
+    
+    function findRandomMove() {
+        const empty = board.map((v, i) => v === '' ? i : -1).filter(i => i !== -1);
+        return empty[Math.floor(Math.random() * empty.length)];
+    }
+    
+    function findBestMove() {
+        // Try to win
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === '') {
+                board[i] = 'O';
+                if (checkWinner('O')) {
+                    board[i] = '';
+                    return i;
+                }
+                board[i] = '';
+            }
+        }
+        
+        // Block player
+        for (let i = 0; i < 9; i++) {
+            if (board[i] === '') {
+                board[i] = 'X';
+                if (checkWinner('X')) {
+                    board[i] = '';
+                    return i;
+                }
+                board[i] = '';
+            }
+        }
+        
+        // Take center
+        if (board[4] === '') return 4;
+        
+        // Take corner
+        const corners = [0, 2, 6, 8];
+        const emptyCorners = corners.filter(i => board[i] === '');
+        if (emptyCorners.length > 0) return emptyCorners[0];
+        
+        // Take any
+        return findRandomMove();
+    }
+    
+    function checkWinner(player) {
+        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+        return wins.some(combo => combo.every(i => board[i] === player));
+    }
+    
+    function endGame(message) {
+        document.getElementById('ttt-message').textContent = message;
+        for (let cell of grid.children) cell.onclick = null;
+    }
+    
+    function updateStats(type) {
+        const current = parseInt(document.getElementById(`ttt-${type}`).textContent);
+        document.getElementById(`ttt-${type}`).textContent = current + 1;
+    }
+}
+
+// 10. Pattern Recognition
+function initPattern() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Pattern Recognition</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="pattern-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="pattern-score">0</span>
+            </div>
+        </div>
+        <div id="pattern-display" class="test-area" style="font-size: 48px;"></div>
+        <div class="answer-options" id="pattern-options"></div>
+        <button onclick="startPattern()">START</button>
+    `;
+}
+
+function startPattern() {
+    let level = 1;
+    let score = 0;
+    
+    function generatePattern() {
+        const types = ['number', 'letter', 'shape'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        let sequence, answer, options;
+        
+        if (type === 'number') {
+            const start = Math.floor(Math.random() * 10);
+            const step = Math.floor(Math.random() * 5) + 1;
+            sequence = [start, start + step, start + 2*step, start + 3*step];
+            answer = start + 4*step;
+            options = [answer, answer + step, answer - step, answer + 2*step];
+        } else if (type === 'letter') {
+            const start = 65 + Math.floor(Math.random() * 20);
+            const step = Math.floor(Math.random() * 3) + 1;
+            sequence = [start, start + step, start + 2*step, start + 3*step].map(c => String.fromCharCode(c));
+            answer = String.fromCharCode(start + 4*step);
+            options = [answer, String.fromCharCode(start + 5*step), String.fromCharCode(start + 3*step), String.fromCharCode(start + 6*step)];
+        } else {
+            const shapes = ['●', '■', '▲', '◆', '★'];
+            const pattern = [0, 1, 0, 1];
+            sequence = pattern.map(i => shapes[i]);
+            answer = shapes[0];
+            options = [shapes[0], shapes[1], shapes[2], shapes[3]];
+        }
+        
+        document.getElementById('pattern-display').textContent = sequence.join(' , ') + ' , ?';
+        
+        // Shuffle options
+        options.sort(() => Math.random() - 0.5);
+        
+        const optionsHtml = options.map(opt => 
+            `<div class="answer-option" onclick="checkPattern('${opt}', '${answer}')">${opt}</div>`
+        ).join('');
+        document.getElementById('pattern-options').innerHTML = optionsHtml;
+    }
+    
+    window.checkPattern = function(selected, correct) {
+        if (selected === correct) {
+            score += level * 10;
+            level++;
+            document.getElementById('pattern-level').textContent = level;
+            document.getElementById('pattern-score').textContent = score;
+            setTimeout(generatePattern, 1000);
+        } else {
+            document.getElementById('pattern-options').innerHTML = `
+                <div class="results">
+                    <h3>Game Over!</h3>
+                    <div class="score">Final Score: ${score}</div>
+                    <div>Level Reached: ${level}</div>
+                </div>
+            `;
+        }
+    };
+    
+    generatePattern();
+}
+
+// 11. Number Memory
+function initNumberMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Number Memory</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="num-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Digits:</span>
+                <span class="stat-value" id="num-digits">1</span>
+            </div>
+        </div>
+        <div id="num-display" class="test-area" style="font-size: 72px;"></div>
+        <div style="text-align: center;">
+            <input type="number" id="num-input" placeholder="Enter the number" style="width: 300px; font-size: 32px; text-align: center; display: none;">
+        </div>
+        <button onclick="startNumberMemory()">START</button>
+        <button id="num-submit" onclick="submitNumber()" style="display: none;">SUBMIT</button>
+    `;
+}
+
+function startNumberMemory() {
+    let level = 1;
+    
+    function showNumber() {
+        const digits = level;
+        let number = '';
+        for (let i = 0; i < digits; i++) {
+            number += Math.floor(Math.random() * 10);
+        }
+        
+        document.getElementById('num-level').textContent = level;
+        document.getElementById('num-digits').textContent = digits;
+        document.getElementById('num-display').textContent = number;
+        document.getElementById('num-input').style.display = 'none';
+        document.getElementById('num-submit').style.display = 'none';
+        
+        setTimeout(() => {
+            document.getElementById('num-display').textContent = '';
+            document.getElementById('num-input').style.display = 'block';
+            document.getElementById('num-submit').style.display = 'inline-block';
+            document.getElementById('num-input').value = '';
+            document.getElementById('num-input').focus();
+            
+            window.submitNumber = function() {
+                const userInput = document.getElementById('num-input').value;
+                if (userInput === number) {
+                    level++;
+                    setTimeout(showNumber, 500);
+                } else {
+                    document.getElementById('num-display').textContent = `Game Over! Reached level ${level}`;
+                    document.getElementById('num-input').style.display = 'none';
+                    document.getElementById('num-submit').style.display = 'none';
+                }
+            };
+        }, 2000 + level * 500);
+    }
+    
+    showNumber();
+}
+
+// 12. Visual Memory
+function initVisualMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Visual Memory</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="vis-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="vis-lives">3</span>
+            </div>
+        </div>
+        <div id="vis-grid" class="grid-container"></div>
+        <button onclick="startVisualMemory()">START</button>
+    `;
+}
+
+function startVisualMemory() {
+    const grid = document.getElementById('vis-grid');
+    let level = 1;
+    let lives = 3;
+    let targetCells = [];
+    
+    function startLevel() {
+        const size = Math.min(3 + Math.floor(level / 3), 7);
+        const numTargets = Math.min(2 + level, size * size / 2);
+        
+        grid.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+        grid.innerHTML = '';
+        
+        targetCells = [];
+        while (targetCells.length < numTargets) {
+            const cell = Math.floor(Math.random() * size * size);
+            if (!targetCells.includes(cell)) targetCells.push(cell);
+        }
+        
+        for (let i = 0; i < size * size; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.width = '60px';
+            cell.style.height = '60px';
+            cell.dataset.index = i;
+            if (targetCells.includes(i)) cell.classList.add('shown');
+            grid.appendChild(cell);
+        }
+        
+        setTimeout(() => {
+            for (let cell of grid.children) {
+                cell.classList.remove('shown');
+                cell.onclick = () => checkCell(cell);
+            }
+        }, 2000);
+    }
+    
+    function checkCell(cell) {
+        const index = parseInt(cell.dataset.index);
+        cell.onclick = null;
+        
+        if (targetCells.includes(index)) {
+            cell.classList.add('active');
+            targetCells = targetCells.filter(i => i !== index);
+            
+            if (targetCells.length === 0) {
+                level++;
+                document.getElementById('vis-level').textContent = level;
+                setTimeout(startLevel, 1000);
+            }
+        } else {
+            cell.style.backgroundColor = '#7c2d2d';
+            lives--;
+            document.getElementById('vis-lives').textContent = lives;
+            
+            if (lives === 0) {
+                for (let c of grid.children) c.onclick = null;
+                setTimeout(() => {
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #ffa07a; font-size: 32px;">Game Over! Level: ${level}</div>`;
+                }, 1000);
+            }
+        }
+    }
+    
+    startLevel();
+}
+
+// 13. Sequence Memory
+function initSequenceMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Sequence Memory</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="seq-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="seq-score">0</span>
+            </div>
+        </div>
+        <div id="seq-grid" class="grid-container"></div>
+        <button onclick="startSequenceMemory()">START</button>
+    `;
+}
+
+function startSequenceMemory() {
+    const grid = document.getElementById('seq-grid');
+    const size = 3;
+    let level = 1;
+    let score = 0;
+    let sequence = [];
+    let playerSequence = [];
+    
+    grid.style.gridTemplateColumns = `repeat(${size}, 100px)`;
+    grid.innerHTML = '';
+    
+    for (let i = 0; i < size * size; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.width = '100px';
+        cell.style.height = '100px';
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    }
+    
+    function playSequence() {
+        playerSequence = [];
+        const cells = grid.children;
+        for (let cell of cells) cell.onclick = null;
+        
+        sequence.push(Math.floor(Math.random() * (size * size)));
+        
+        let i = 0;
+        const interval = setInterval(() => {
+            if (i > 0) cells[sequence[i-1]].classList.remove('shown');
+            if (i < sequence.length) {
+                cells[sequence[i]].classList.add('shown');
+                i++;
+            } else {
+                clearInterval(interval);
+                cells[sequence[sequence.length-1]].classList.remove('shown');
+                enableInput();
+            }
+        }, 600);
+    }
+    
+    function enableInput() {
+        const cells = grid.children;
+        for (let cell of cells) {
+            cell.onclick = function() {
+                const index = parseInt(this.dataset.index);
+                playerSequence.push(index);
+                this.classList.add('active');
+                setTimeout(() => this.classList.remove('active'), 200);
+                
+                const step = playerSequence.length - 1;
+                if (playerSequence[step] !== sequence[step]) {
+                    for (let c of cells) c.onclick = null;
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #ffa07a; font-size: 32px;">Game Over!<br>Final Score: ${score}</div>`;
+                    return;
+                }
+                
+                if (playerSequence.length === sequence.length) {
+                    score += level * 10;
+                    level++;
+                    document.getElementById('seq-level').textContent = level;
+                    document.getElementById('seq-score').textContent = score;
+                    setTimeout(playSequence, 1000);
+                }
+            };
+        }
+    }
+    
+    playSequence();
+}
+
+// 14. Aim Trainer
+function initAimTrainer() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Aim Trainer</h2>
+        <div class="settings-panel">
+            <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Target Size:</span>
+                <select id="aim-size">
+                    <option value="30">Small</option>
+                    <option value="50" selected>Medium</option>
+                    <option value="70">Large</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <span class="setting-label">Number of Targets:</span>
+                <select id="aim-count">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="30">30</option>
+                </select>
+            </div>
+        </div>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Average Time:</span>
+                <span class="stat-value" id="aim-avg">0ms</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Progress:</span>
+                <span class="stat-value" id="aim-progress">0/0</span>
+            </div>
+        </div>
+        <div class="click-area" id="aim-area">Click START to begin</div>
+        <button onclick="startAimTrainer()">START</button>
+    `;
+}
+
+function startAimTrainer() {
+    const size = parseInt(document.getElementById('aim-size').value);
+    const count = parseInt(document.getElementById('aim-count').value);
+    const area = document.getElementById('aim-area');
+    let current = 0;
+    let times = [];
+    let appearTime;
+    
+    area.innerHTML = '';
+    
+    function showTarget() {
+        if (current >= count) {
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            area.innerHTML = `Test Complete!<br>Average Time: ${avgTime.toFixed(0)}ms`;
+            return;
+        }
+        
+        area.innerHTML = '';
+        const target = document.createElement('div');
+        target.className = 'circle-target';
+        target.style.width = size + 'px';
+        target.style.height = size + 'px';
+        target.style.left = Math.random() * (area.clientWidth - size) + 'px';
+        target.style.top = Math.random() * (area.clientHeight - size) + 'px';
+        area.appendChild(target);
+        appearTime = Date.now();
+        
+        target.onclick = () => {
+            const time = Date.now() - appearTime;
+            times.push(time);
+            current++;
+            const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+            document.getElementById('aim-avg').textContent = avgTime.toFixed(0) + 'ms';
+            document.getElementById('aim-progress').textContent = `${current}/${count}`;
+            showTarget();
+        };
+    }
+    
+    document.getElementById('aim-progress').textContent = `0/${count}`;
+    showTarget();
+}
+
+// 15. Chimp Test
+function initChimpTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Chimp Test</h2>
+        <p style="text-align: center; color: #dda15e; font-size: 24px; margin-bottom: 20px;">
+            Click the numbers in order from lowest to highest
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="chimp-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Numbers:</span>
+                <span class="stat-value" id="chimp-count">4</span>
+            </div>
+        </div>
+        <div class="click-area" id="chimp-area" style="height: 500px;">Click START to begin</div>
+        <button onclick="startChimpTest()">START</button>
+    `;
+}
+
+function startChimpTest() {
+    const area = document.getElementById('chimp-area');
+    let level = 1;
+    let count = 4;
+    
+    function startRound() {
+        area.innerHTML = '';
+        const numbers = [];
+        const positions = [];
+        
+        // Generate unique positions
+        while (positions.length < count) {
+            const x = Math.random() * (area.clientWidth - 80);
+            const y = Math.random() * (area.clientHeight - 80);
+            const tooClose = positions.some(pos => 
+                Math.abs(pos.x - x) < 100 && Math.abs(pos.y - y) < 100
+            );
+            if (!tooClose) positions.push({ x, y });
+        }
+        
+        // Create number boxes
+        for (let i = 0; i < count; i++) {
+            const box = document.createElement('div');
+            box.className = 'grid-cell';
+            box.style.position = 'absolute';
+            box.style.width = '60px';
+            box.style.height = '60px';
+            box.style.left = positions[i].x + 'px';
+            box.style.top = positions[i].y + 'px';
+            box.style.fontSize = '32px';
+            box.textContent = i + 1;
+            box.dataset.number = i + 1;
+            area.appendChild(box);
+            numbers.push(box);
+        }
+        
+        let expected = 1;
+        let firstClick = true;
+        
+        numbers.forEach(box => {
+            box.onclick = () => {
+                const num = parseInt(box.dataset.number);
+                
+                if (num === expected) {
+                    box.style.backgroundColor = '#4a7c2e';
+                    box.textContent = '';
+                    
+                    if (firstClick) {
+                        // Hide all other numbers after first click
+                        numbers.forEach(b => {
+                            if (b !== box) b.textContent = '';
+                        });
+                        firstClick = false;
+                    }
+                    
+                    expected++;
+                    
+                    if (expected > count) {
+                        // Success
+                        level++;
+                        count = Math.min(count + 1, 10);
+                        document.getElementById('chimp-level').textContent = level;
+                        document.getElementById('chimp-count').textContent = count;
+                        setTimeout(startRound, 1000);
+                    }
+                } else {
+                    // Failed
+                    numbers.forEach(b => b.onclick = null);
+                    area.innerHTML = `<div style="text-align: center; padding-top: 200px; color: #ffa07a; font-size: 48px;">
+                        Game Over!<br>Level: ${level}<br>Numbers: ${count}
+                    </div>`;
+                }
+            };
+        });
+    }
+    
+    document.getElementById('chimp-level').textContent = level;
+    document.getElementById('chimp-count').textContent = count;
+    startRound();
+}
