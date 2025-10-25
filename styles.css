@@ -19,6 +19,18 @@
     --success-border: #4a7c2e;
     --error-bg: #7c2d2d;
     --error-border: #a03e3e;
+    
+    /* Additional vibrant colors */
+    --color-blue: #4a90e2;
+    --color-purple: #9b59b6;
+    --color-green: #2ecc71;
+    --color-red: #e74c3c;
+    --color-yellow: #f39c12;
+    --color-pink: #e91e63;
+    --color-cyan: #1abc9c;
+    --color-orange: #ff6347;
+    --color-lime: #cddc39;
+    --color-indigo: #6c5ce7;
 }
 
 body.light-theme {
@@ -487,4 +499,112 @@ canvas {
     height: 100%;
     background-color: var(--text-accent);
     transition: width 0.3s;
+}
+
+.credits-footer {
+    background-color: var(--bg-secondary);
+    border-top: 4px solid var(--border-secondary);
+    padding: 20px;
+    text-align: center;
+    margin-top: 40px;
+    font-size: 24px;
+    color: var(--text-secondary);
+}
+
+.credits-footer a {
+    color: var(--text-accent);
+    text-decoration: none;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.credits-footer a:hover {
+    color: var(--border-secondary);
+    border-bottom: 2px solid var(--border-secondary);
+}
+
+/* Animations for enhanced interactivity */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px var(--text-accent); }
+    50% { box-shadow: 0 0 20px var(--text-accent); }
+}
+
+@keyframes rainbow {
+    0% { border-color: var(--color-red); }
+    14% { border-color: var(--color-orange); }
+    28% { border-color: var(--color-yellow); }
+    42% { border-color: var(--color-green); }
+    57% { border-color: var(--color-cyan); }
+    71% { border-color: var(--color-blue); }
+    85% { border-color: var(--color-purple); }
+    100% { border-color: var(--color-red); }
+}
+
+.game-card {
+    animation: slideIn 0.5s ease-out;
+}
+
+.game-card:nth-child(1) { border-color: var(--color-red); }
+.game-card:nth-child(2) { border-color: var(--color-orange); }
+.game-card:nth-child(3) { border-color: var(--color-yellow); }
+.game-card:nth-child(4) { border-color: var(--color-green); }
+.game-card:nth-child(5) { border-color: var(--color-cyan); }
+.game-card:nth-child(6) { border-color: var(--color-blue); }
+.game-card:nth-child(7) { border-color: var(--color-purple); }
+.game-card:nth-child(8) { border-color: var(--color-pink); }
+.game-card:nth-child(9) { border-color: var(--color-lime); }
+.game-card:nth-child(10) { border-color: var(--color-indigo); }
+.game-card:nth-child(11) { border-color: var(--color-red); }
+.game-card:nth-child(12) { border-color: var(--color-orange); }
+.game-card:nth-child(13) { border-color: var(--color-yellow); }
+.game-card:nth-child(14) { border-color: var(--color-green); }
+.game-card:nth-child(15) { border-color: var(--color-cyan); }
+.game-card:nth-child(16) { border-color: var(--color-blue); }
+.game-card:nth-child(17) { border-color: var(--color-purple); }
+.game-card:nth-child(18) { border-color: var(--color-pink); }
+.game-card:nth-child(19) { border-color: var(--color-lime); }
+.game-card:nth-child(20) { border-color: var(--color-indigo); }
+.game-card:nth-child(21) { border-color: var(--color-red); }
+.game-card:nth-child(22) { border-color: var(--color-orange); }
+.game-card:nth-child(23) { border-color: var(--color-yellow); }
+.game-card:nth-child(24) { border-color: var(--color-green); }
+.game-card:nth-child(25) { border-color: var(--color-cyan); }
+.game-card:nth-child(26) { border-color: var(--color-blue); }
+.game-card:nth-child(27) { border-color: var(--color-purple); }
+.game-card:nth-child(28) { border-color: var(--color-pink); }
+.game-card:nth-child(29) { border-color: var(--color-lime); }
+.game-card:nth-child(30) { border-color: var(--color-indigo); }
+.game-card:nth-child(31) { border-color: var(--color-red); }
+.game-card:nth-child(32) { border-color: var(--color-orange); }
+.game-card:nth-child(33) { border-color: var(--color-yellow); }
+.game-card:nth-child(34) { border-color: var(--color-green); }
+.game-card:nth-child(35) { border-color: var(--color-cyan); }
+.game-card:nth-child(36) { border-color: var(--color-blue); }
+.game-card:nth-child(37) { border-color: var(--color-purple); }
+.game-card:nth-child(38) { border-color: var(--color-pink); }
+.game-card:nth-child(39) { border-color: var(--color-lime); }
+.game-card:nth-child(40) { border-color: var(--color-indigo); }
+
+.circle-target {
+    animation: pulse 1s infinite;
+}
+
+button:active {
+    animation: pulse 0.3s;
 }
