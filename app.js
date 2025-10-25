@@ -66,6 +66,21 @@ function loadGame(gameName) {
         case 'typing-rhythm': initTypingRhythm(); break;
         case 'multi-task': initMultiTask(); break;
         case 'countdown-challenge': initCountdownChallenge(); break;
+        case 'speed-clicker': initSpeedClicker(); break;
+        case 'letter-memory': initLetterMemory(); break;
+        case 'color-sequence': initColorSequence(); break;
+        case 'mental-math': initMentalMath(); break;
+        case 'pixel-perfect': initPixelPerfect(); break;
+        case 'sound-memory': initSoundMemory(); break;
+        case 'puzzle-slider': initPuzzleSlider(); break;
+        case 'reaction-colors': initReactionColors(); break;
+        case 'typing-ninja': initTypingNinja(); break;
+        case 'button-masher': initButtonMasher(); break;
+        case 'memory-cards': initMemoryCards(); break;
+        case 'arrow-dodge': initArrowDodge(); break;
+        case 'precision-click': initPrecisionClick(); break;
+        case 'emoji-memory': initEmojiMemory(); break;
+        case 'quick-decision': initQuickDecision(); break;
     }
 }
 
@@ -2405,3 +2420,1197 @@ function initCountdownChallenge() {
     input.focus();
 }
 
+
+// 26. Speed Clicker
+function initSpeedClicker() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Speed Clicker</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="speed-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="speed-time">15</span>
+            </div>
+        </div>
+        <div class="click-area" id="speed-area" style="height: 500px;">Click to start!</div>
+    `;
+    
+    const area = document.getElementById('speed-area');
+    let score = 0;
+    let timeLeft = 15;
+    let started = false;
+    
+    area.onclick = () => {
+        if (!started) {
+            started = true;
+            area.textContent = '';
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('speed-time').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    area.innerHTML = `<div style="text-align: center; padding-top: 200px; font-size: 48px;">
+                        Game Over!<br>Score: ${score}
+                    </div>`;
+                    area.onclick = null;
+                }
+            }, 1000);
+            spawnTarget();
+        }
+    };
+    
+    function spawnTarget() {
+        if (timeLeft <= 0) return;
+        
+        const target = document.createElement('div');
+        target.className = 'circle-target';
+        const size = 40 + Math.random() * 40;
+        target.style.width = size + 'px';
+        target.style.height = size + 'px';
+        target.style.left = Math.random() * (area.clientWidth - size) + 'px';
+        target.style.top = Math.random() * (area.clientHeight - size) + 'px';
+        area.appendChild(target);
+        
+        target.onclick = (e) => {
+            e.stopPropagation();
+            score++;
+            document.getElementById('speed-score').textContent = score;
+            target.remove();
+            spawnTarget();
+        };
+        
+        setTimeout(() => {
+            if (target.parentNode) target.remove();
+        }, 2000);
+    }
+}
+
+// 27. Letter Memory
+function initLetterMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Letter Memory</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="letter-level">1</span>
+            </div>
+        </div>
+        <div id="letter-display" class="test-area" style="font-size: 72px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="text" id="letter-input" placeholder="Type the letters" style="width: 300px; font-size: 32px; text-align: center; display: none;">
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click to start
+        </div>
+    `;
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startLetterMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
+}
+
+function startLetterMemory() {
+    let level = 1;
+    
+    function showLetters() {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let sequence = '';
+        for (let i = 0; i < level + 2; i++) {
+            sequence += letters[Math.floor(Math.random() * letters.length)];
+        }
+        
+        document.getElementById('letter-level').textContent = level;
+        document.getElementById('letter-display').textContent = sequence;
+        document.getElementById('letter-input').style.display = 'none';
+        
+        setTimeout(() => {
+            document.getElementById('letter-display').textContent = '';
+            document.getElementById('letter-input').style.display = 'block';
+            document.getElementById('letter-input').value = '';
+            document.getElementById('letter-input').focus();
+            
+            const checkAnswer = () => {
+                const userInput = document.getElementById('letter-input').value.toUpperCase();
+                if (userInput.length === sequence.length) {
+                    if (userInput === sequence) {
+                        level++;
+                        setTimeout(showLetters, 500);
+                    } else {
+                        document.getElementById('letter-display').textContent = `Game Over! Level: ${level}`;
+                        document.getElementById('letter-input').style.display = 'none';
+                        document.getElementById('letter-input').removeEventListener('input', checkAnswer);
+                    }
+                }
+            };
+            document.getElementById('letter-input').addEventListener('input', checkAnswer);
+        }, 2000 + level * 300);
+    }
+    
+    showLetters();
+}
+
+// 28. Color Sequence
+function initColorSequence() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Sequence</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="color-seq-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="color-seq-score">0</span>
+            </div>
+        </div>
+        <div id="color-seq-grid" style="display: grid; grid-template-columns: repeat(2, 150px); gap: 10px; justify-content: center; margin: 40px auto;"></div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click to start
+        </div>
+    `;
+    
+    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
+    const grid = document.getElementById('color-seq-grid');
+    
+    colors.forEach((color, i) => {
+        const cell = document.createElement('div');
+        cell.style.width = '150px';
+        cell.style.height = '150px';
+        cell.style.backgroundColor = color;
+        cell.style.border = '4px solid var(--border-primary)';
+        cell.style.cursor = 'pointer';
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    });
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startColorSequence();
+        }
+    };
+    document.addEventListener('click', startHandler);
+    
+    function startColorSequence() {
+        let level = 1;
+        let score = 0;
+        let sequence = [];
+        let playerSequence = [];
+        
+        function playSequence() {
+            playerSequence = [];
+            const cells = grid.children;
+            for (let cell of cells) cell.onclick = null;
+            
+            sequence.push(Math.floor(Math.random() * 4));
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i > 0) cells[sequence[i-1]].style.opacity = '1';
+                if (i < sequence.length) {
+                    cells[sequence[i]].style.opacity = '0.5';
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    cells[sequence[sequence.length-1]].style.opacity = '1';
+                    enableInput();
+                }
+            }, 600);
+        }
+        
+        function enableInput() {
+            const cells = grid.children;
+            for (let cell of cells) {
+                cell.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    playerSequence.push(index);
+                    
+                    const step = playerSequence.length - 1;
+                    if (playerSequence[step] !== sequence[step]) {
+                        for (let c of cells) c.onclick = null;
+                        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 32px;">
+                            Game Over!<br>Score: ${score}
+                        </div>`;
+                        return;
+                    }
+                    
+                    if (playerSequence.length === sequence.length) {
+                        score += level * 10;
+                        level++;
+                        document.getElementById('color-seq-level').textContent = level;
+                        document.getElementById('color-seq-score').textContent = score;
+                        setTimeout(playSequence, 1000);
+                    }
+                };
+            }
+        }
+        
+        playSequence();
+    }
+}
+
+// 29. Mental Math Sprint
+function initMentalMath() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Mental Math Sprint</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="mental-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Streak:</span>
+                <span class="stat-value" id="mental-streak">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="mental-time">45</span>
+            </div>
+        </div>
+        <div id="mental-question" class="test-area" style="font-size: 64px;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="mental-input" placeholder="Answer" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+    `;
+    
+    let score = 0;
+    let streak = 0;
+    let timeLeft = 45;
+    let currentAnswer;
+    const input = document.getElementById('mental-input');
+    
+    function generateQuestion() {
+        const ops = ['+', '-', '*'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        let a, b;
+        
+        if (op === '*') {
+            a = Math.floor(Math.random() * 12) + 2;
+            b = Math.floor(Math.random() * 12) + 2;
+            currentAnswer = a * b;
+        } else if (op === '+') {
+            a = Math.floor(Math.random() * 50) + 10;
+            b = Math.floor(Math.random() * 50) + 10;
+            currentAnswer = a + b;
+        } else {
+            a = Math.floor(Math.random() * 100) + 20;
+            b = Math.floor(Math.random() * 50) + 10;
+            currentAnswer = a - b;
+        }
+        
+        document.getElementById('mental-question').textContent = `${a} ${op} ${b} = ?`;
+        input.value = '';
+        input.focus();
+    }
+    
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const userAnswer = parseInt(input.value);
+            if (userAnswer === currentAnswer) {
+                score++;
+                streak++;
+                document.getElementById('mental-score').textContent = score;
+                document.getElementById('mental-streak').textContent = streak;
+            } else {
+                streak = 0;
+                document.getElementById('mental-streak').textContent = streak;
+            }
+            generateQuestion();
+        }
+    });
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('mental-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            input.disabled = true;
+            document.getElementById('mental-question').textContent = `Game Over! Score: ${score}`;
+        }
+    }, 1000);
+    
+    generateQuestion();
+}
+
+// 30. Pixel Perfect
+function initPixelPerfect() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Pixel Perfect</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Draw straight lines between the dots!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="pixel-accuracy">0%</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="pixel-canvas" width="600" height="400"></canvas>
+        </div>
+    `;
+    
+    const canvas = document.getElementById('pixel-canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let startX, startY, endX, endY;
+    
+    // Draw dots
+    startX = 100;
+    startY = 200;
+    endX = 500;
+    endY = 200;
+    
+    ctx.fillStyle = 'var(--text-accent)';
+    ctx.beginPath();
+    ctx.arc(startX, startY, 10, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(endX, endY, 10, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    const points = [];
+    
+    canvas.onmousedown = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        if (Math.abs(x - startX) < 15 && Math.abs(y - startY) < 15) {
+            drawing = true;
+            points.length = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'var(--text-accent)';
+            ctx.beginPath();
+            ctx.arc(startX, startY, 10, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(endX, endY, 10, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    };
+    
+    canvas.onmousemove = (e) => {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        points.push({ x, y });
+        
+        if (points.length > 1) {
+            ctx.strokeStyle = 'var(--color-blue)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(points[points.length - 2].x, points[points.length - 2].y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+    };
+    
+    canvas.onmouseup = () => {
+        if (!drawing) return;
+        drawing = false;
+        
+        // Calculate deviation from straight line
+        let totalDeviation = 0;
+        points.forEach(p => {
+            const deviation = Math.abs(p.y - startY);
+            totalDeviation += deviation;
+        });
+        
+        const avgDeviation = totalDeviation / points.length;
+        const accuracy = Math.max(0, 100 - avgDeviation);
+        document.getElementById('pixel-accuracy').textContent = accuracy.toFixed(1) + '%';
+    };
+}
+
+// 31. Sound Memory (Visual representation)
+function initSoundMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Sound Memory</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Remember the pattern of beeps!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="sound-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="sound-score">0</span>
+            </div>
+        </div>
+        <div id="sound-grid" style="display: grid; grid-template-columns: repeat(2, 150px); gap: 10px; justify-content: center; margin: 40px auto;"></div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click to start
+        </div>
+    `;
+    
+    const sounds = ['🔴', '🔵', '🟢', '🟡'];
+    const grid = document.getElementById('sound-grid');
+    
+    sounds.forEach((emoji, i) => {
+        const cell = document.createElement('div');
+        cell.style.width = '150px';
+        cell.style.height = '150px';
+        cell.style.backgroundColor = 'var(--bg-secondary)';
+        cell.style.border = '4px solid var(--border-primary)';
+        cell.style.cursor = 'pointer';
+        cell.style.fontSize = '64px';
+        cell.style.display = 'flex';
+        cell.style.alignItems = 'center';
+        cell.style.justifyContent = 'center';
+        cell.textContent = emoji;
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    });
+    
+    let started = false;
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startSoundMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
+    
+    function startSoundMemory() {
+        let level = 1;
+        let score = 0;
+        let sequence = [];
+        let playerSequence = [];
+        
+        function playSequence() {
+            playerSequence = [];
+            const cells = grid.children;
+            for (let cell of cells) cell.onclick = null;
+            
+            sequence.push(Math.floor(Math.random() * 4));
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i > 0) cells[sequence[i-1]].style.backgroundColor = 'var(--bg-secondary)';
+                if (i < sequence.length) {
+                    cells[sequence[i]].style.backgroundColor = 'var(--text-accent)';
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    cells[sequence[sequence.length-1]].style.backgroundColor = 'var(--bg-secondary)';
+                    enableInput();
+                }
+            }, 700);
+        }
+        
+        function enableInput() {
+            const cells = grid.children;
+            for (let cell of cells) {
+                cell.onclick = function() {
+                    const index = parseInt(this.dataset.index);
+                    playerSequence.push(index);
+                    
+                    this.style.backgroundColor = 'var(--text-accent)';
+                    setTimeout(() => { this.style.backgroundColor = 'var(--bg-secondary)'; }, 200);
+                    
+                    const step = playerSequence.length - 1;
+                    if (playerSequence[step] !== sequence[step]) {
+                        for (let c of cells) c.onclick = null;
+                        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 32px;">
+                            Game Over!<br>Score: ${score}
+                        </div>`;
+                        return;
+                    }
+                    
+                    if (playerSequence.length === sequence.length) {
+                        score += level * 10;
+                        level++;
+                        document.getElementById('sound-level').textContent = level;
+                        document.getElementById('sound-score').textContent = score;
+                        setTimeout(playSequence, 1000);
+                    }
+                };
+            }
+        }
+        
+        playSequence();
+    }
+}
+
+// 32. Puzzle Slider
+function initPuzzleSlider() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Puzzle Slider</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="puzzle-moves">0</span>
+            </div>
+        </div>
+        <div id="puzzle-grid" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 5px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const grid = document.getElementById('puzzle-grid');
+    let tiles = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+    let moves = 0;
+    
+    // Shuffle
+    for (let i = 0; i < 100; i++) {
+        const emptyIndex = tiles.indexOf(0);
+        const neighbors = [];
+        if (emptyIndex % 3 > 0) neighbors.push(emptyIndex - 1);
+        if (emptyIndex % 3 < 2) neighbors.push(emptyIndex + 1);
+        if (emptyIndex > 2) neighbors.push(emptyIndex - 3);
+        if (emptyIndex < 6) neighbors.push(emptyIndex + 3);
+        const randomNeighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+        [tiles[emptyIndex], tiles[randomNeighbor]] = [tiles[randomNeighbor], tiles[emptyIndex]];
+    }
+    
+    function render() {
+        grid.innerHTML = '';
+        tiles.forEach((num, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.style.width = '100px';
+            cell.style.height = '100px';
+            cell.style.fontSize = '48px';
+            if (num === 0) {
+                cell.style.backgroundColor = 'var(--bg-primary)';
+                cell.style.border = 'none';
+            } else {
+                cell.textContent = num;
+                cell.onclick = () => moveTile(i);
+            }
+            grid.appendChild(cell);
+        });
+    }
+    
+    function moveTile(index) {
+        const emptyIndex = tiles.indexOf(0);
+        const isAdjacent = (
+            (index === emptyIndex - 1 && emptyIndex % 3 !== 0) ||
+            (index === emptyIndex + 1 && index % 3 !== 0) ||
+            index === emptyIndex - 3 ||
+            index === emptyIndex + 3
+        );
+        
+        if (isAdjacent) {
+            [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+            moves++;
+            document.getElementById('puzzle-moves').textContent = moves;
+            render();
+            
+            if (tiles.join('') === '123456780') {
+                setTimeout(() => {
+                    grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 32px;">
+                        Solved!<br>Moves: ${moves}
+                    </div>`;
+                }, 300);
+            }
+        }
+    }
+    
+    render();
+}
+
+// 33. Reaction Colors
+function initReactionColors() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Reaction</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Press SPACE when the color matches!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="reaction-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="reaction-round">0/10</span>
+            </div>
+        </div>
+        <div id="reaction-display" class="test-area" style="font-size: 80px; font-weight: bold;"></div>
+    `;
+    
+    const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW'];
+    const colorCodes = { 'RED': '#ff0000', 'BLUE': '#0000ff', 'GREEN': '#00ff00', 'YELLOW': '#ffff00' };
+    let score = 0;
+    let round = 0;
+    let isMatch = false;
+    
+    function newRound() {
+        if (round >= 10) {
+            document.getElementById('reaction-display').textContent = `Complete! Score: ${score}/10`;
+            document.removeEventListener('keydown', keyHandler);
+            return;
+        }
+        
+        round++;
+        document.getElementById('reaction-round').textContent = `${round}/10`;
+        
+        const wordColor = colors[Math.floor(Math.random() * colors.length)];
+        const displayColor = Math.random() < 0.5 ? wordColor : colors[Math.floor(Math.random() * colors.length)];
+        isMatch = wordColor === displayColor;
+        
+        const display = document.getElementById('reaction-display');
+        display.textContent = wordColor;
+        display.style.color = colorCodes[displayColor];
+    }
+    
+    function keyHandler(e) {
+        if (e.code === 'Space' && round > 0 && round <= 10) {
+            e.preventDefault();
+            if (isMatch) {
+                score++;
+                document.getElementById('reaction-score').textContent = score;
+            }
+            newRound();
+        }
+    }
+    
+    document.addEventListener('keydown', keyHandler);
+    newRound();
+}
+
+// 34. Typing Ninja
+function initTypingNinja() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Typing Ninja</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="ninja-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="ninja-lives">3</span>
+            </div>
+        </div>
+        <div id="ninja-area" style="position: relative; height: 400px; background-color: var(--bg-primary); border: 4px solid var(--border-primary); overflow: hidden;"></div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="text" id="ninja-input" placeholder="Type words here" style="width: 300px; font-size: 24px; text-align: center;">
+        </div>
+    `;
+    
+    const words = ['code', 'type', 'fast', 'ninja', 'quick', 'speed', 'word', 'text', 'key', 'press'];
+    const area = document.getElementById('ninja-area');
+    const input = document.getElementById('ninja-input');
+    let score = 0;
+    let lives = 3;
+    let activeWords = [];
+    
+    function spawnWord() {
+        if (lives <= 0) return;
+        
+        const word = words[Math.floor(Math.random() * words.length)];
+        const wordEl = document.createElement('div');
+        wordEl.textContent = word;
+        wordEl.style.position = 'absolute';
+        wordEl.style.left = Math.random() * (area.clientWidth - 100) + 'px';
+        wordEl.style.top = '0px';
+        wordEl.style.fontSize = '28px';
+        wordEl.style.color = 'var(--text-accent)';
+        wordEl.dataset.word = word;
+        area.appendChild(wordEl);
+        activeWords.push(wordEl);
+        
+        const fallInterval = setInterval(() => {
+            if (!wordEl.parentNode) {
+                clearInterval(fallInterval);
+                return;
+            }
+            
+            const currentTop = parseInt(wordEl.style.top);
+            wordEl.style.top = (currentTop + 2) + 'px';
+            
+            if (currentTop > area.clientHeight) {
+                clearInterval(fallInterval);
+                wordEl.remove();
+                activeWords = activeWords.filter(w => w !== wordEl);
+                lives--;
+                document.getElementById('ninja-lives').textContent = lives;
+                if (lives <= 0) {
+                    area.innerHTML = `<div style="text-align: center; padding-top: 150px; font-size: 48px; color: var(--text-accent);">
+                        Game Over!<br>Score: ${score}
+                    </div>`;
+                    input.disabled = true;
+                }
+            }
+        }, 50);
+    }
+    
+    input.addEventListener('input', () => {
+        const typed = input.value.toLowerCase();
+        const matchedWord = activeWords.find(w => w.dataset.word === typed);
+        if (matchedWord) {
+            score++;
+            document.getElementById('ninja-score').textContent = score;
+            matchedWord.remove();
+            activeWords = activeWords.filter(w => w !== matchedWord);
+            input.value = '';
+        }
+    });
+    
+    setInterval(() => {
+        if (lives > 0 && activeWords.length < 3) {
+            spawnWord();
+        }
+    }, 2000);
+    
+    input.focus();
+    spawnWord();
+}
+
+// 35. Button Masher
+function initButtonMasher() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Button Masher</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Press the SPACEBAR as many times as possible!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Presses:</span>
+                <span class="stat-value" id="masher-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="masher-time">10</span>
+            </div>
+        </div>
+        <div class="test-area" style="font-size: 64px; color: var(--text-accent);">
+            Press SPACEBAR to start!
+        </div>
+    `;
+    
+    let count = 0;
+    let timeLeft = 10;
+    let started = false;
+    
+    const keyHandler = (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            if (!started) {
+                started = true;
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('masher-time').textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        document.removeEventListener('keydown', keyHandler);
+                        document.querySelector('.test-area').textContent = `Complete! Total: ${count} presses`;
+                    }
+                }, 1000);
+            }
+            count++;
+            document.getElementById('masher-count').textContent = count;
+        }
+    };
+    
+    document.addEventListener('keydown', keyHandler);
+}
+
+// 36. Memory Cards
+function initMemoryCards() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Memory Cards</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Matches:</span>
+                <span class="stat-value" id="cards-matches">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="cards-moves">0</span>
+            </div>
+        </div>
+        <div id="cards-grid" style="display: grid; grid-template-columns: repeat(4, 80px); gap: 10px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const symbols = ['🎮', '🎯', '🎪', '🎨', '🎭', '🎬', '🎤', '🎧'];
+    const cards = [...symbols, ...symbols].sort(() => Math.random() - 0.5);
+    const grid = document.getElementById('cards-grid');
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    
+    cards.forEach((symbol, i) => {
+        const card = document.createElement('div');
+        card.className = 'grid-cell';
+        card.style.width = '80px';
+        card.style.height = '80px';
+        card.style.fontSize = '40px';
+        card.style.backgroundColor = 'var(--bg-secondary)';
+        card.dataset.symbol = symbol;
+        card.dataset.index = i;
+        card.textContent = '?';
+        grid.appendChild(card);
+        
+        card.onclick = () => {
+            if (flippedCards.length < 2 && !flippedCards.includes(card) && card.textContent === '?') {
+                card.textContent = symbol;
+                card.style.backgroundColor = 'var(--text-accent)';
+                flippedCards.push(card);
+                
+                if (flippedCards.length === 2) {
+                    moves++;
+                    document.getElementById('cards-moves').textContent = moves;
+                    
+                    if (flippedCards[0].dataset.symbol === flippedCards[1].dataset.symbol) {
+                        matchedPairs++;
+                        document.getElementById('cards-matches').textContent = matchedPairs;
+                        flippedCards = [];
+                        
+                        if (matchedPairs === 8) {
+                            setTimeout(() => {
+                                grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 32px;">
+                                    Complete!<br>Moves: ${moves}
+                                </div>`;
+                            }, 500);
+                        }
+                    } else {
+                        setTimeout(() => {
+                            flippedCards.forEach(c => {
+                                c.textContent = '?';
+                                c.style.backgroundColor = 'var(--bg-secondary)';
+                            });
+                            flippedCards = [];
+                        }, 1000);
+                    }
+                }
+            }
+        };
+    });
+}
+
+// 37. Arrow Dodge
+function initArrowDodge() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Arrow Dodge</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Use arrow keys to dodge!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="dodge-score">0</span>
+            </div>
+        </div>
+        <div id="dodge-area" style="position: relative; height: 400px; background-color: var(--bg-primary); border: 4px solid var(--border-primary); overflow: hidden;">
+            <div id="player" style="position: absolute; width: 40px; height: 40px; background-color: var(--color-green); border-radius: 50%; left: 280px; top: 180px;"></div>
+        </div>
+    `;
+    
+    const area = document.getElementById('dodge-area');
+    const player = document.getElementById('player');
+    let score = 0;
+    let gameOver = false;
+    let playerX = 280;
+    let playerY = 180;
+    
+    document.addEventListener('keydown', (e) => {
+        if (gameOver) return;
+        const speed = 20;
+        if (e.key === 'ArrowLeft' && playerX > 0) playerX -= speed;
+        if (e.key === 'ArrowRight' && playerX < area.clientWidth - 40) playerX += speed;
+        if (e.key === 'ArrowUp' && playerY > 0) playerY -= speed;
+        if (e.key === 'ArrowDown' && playerY < area.clientHeight - 40) playerY += speed;
+        player.style.left = playerX + 'px';
+        player.style.top = playerY + 'px';
+    });
+    
+    function spawnArrow() {
+        if (gameOver) return;
+        
+        const arrow = document.createElement('div');
+        arrow.style.position = 'absolute';
+        arrow.style.width = '30px';
+        arrow.style.height = '30px';
+        arrow.style.backgroundColor = 'var(--color-red)';
+        arrow.style.left = Math.random() * (area.clientWidth - 30) + 'px';
+        arrow.style.top = '-30px';
+        area.appendChild(arrow);
+        
+        const fallInterval = setInterval(() => {
+            if (gameOver) {
+                clearInterval(fallInterval);
+                return;
+            }
+            
+            const currentTop = parseInt(arrow.style.top);
+            arrow.style.top = (currentTop + 3) + 'px';
+            
+            // Collision detection
+            const arrowX = parseInt(arrow.style.left);
+            const arrowY = parseInt(arrow.style.top);
+            if (arrowX < playerX + 40 && arrowX + 30 > playerX &&
+                arrowY < playerY + 40 && arrowY + 30 > playerY) {
+                gameOver = true;
+                clearInterval(fallInterval);
+                area.innerHTML = `<div style="text-align: center; padding-top: 150px; font-size: 48px; color: var(--text-accent);">
+                    Game Over!<br>Score: ${score}
+                </div>`;
+            }
+            
+            if (currentTop > area.clientHeight) {
+                clearInterval(fallInterval);
+                arrow.remove();
+                score++;
+                document.getElementById('dodge-score').textContent = score;
+            }
+        }, 30);
+    }
+    
+    setInterval(() => {
+        if (!gameOver) spawnArrow();
+    }, 1000);
+}
+
+// 38. Precision Click
+function initPrecisionClick() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Precision Click</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Click the tiny targets!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Hits:</span>
+                <span class="stat-value" id="precision-hits">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Misses:</span>
+                <span class="stat-value" id="precision-misses">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="precision-accuracy">0%</span>
+            </div>
+        </div>
+        <div class="click-area" id="precision-area" style="height: 500px;"></div>
+    `;
+    
+    const area = document.getElementById('precision-area');
+    let hits = 0;
+    let misses = 0;
+    
+    area.onclick = () => {
+        misses++;
+        updateStats();
+    };
+    
+    function updateStats() {
+        document.getElementById('precision-hits').textContent = hits;
+        document.getElementById('precision-misses').textContent = misses;
+        const total = hits + misses;
+        const accuracy = total > 0 ? ((hits / total) * 100).toFixed(1) : 0;
+        document.getElementById('precision-accuracy').textContent = accuracy + '%';
+    }
+    
+    function spawnTarget() {
+        const target = document.createElement('div');
+        target.className = 'circle-target';
+        const size = 15 + Math.random() * 15;
+        target.style.width = size + 'px';
+        target.style.height = size + 'px';
+        target.style.left = Math.random() * (area.clientWidth - size) + 'px';
+        target.style.top = Math.random() * (area.clientHeight - size) + 'px';
+        area.appendChild(target);
+        
+        target.onclick = (e) => {
+            e.stopPropagation();
+            hits++;
+            updateStats();
+            target.remove();
+            spawnTarget();
+        };
+        
+        setTimeout(() => {
+            if (target.parentNode) {
+                target.remove();
+                spawnTarget();
+            }
+        }, 3000);
+    }
+    
+    spawnTarget();
+}
+
+// 39. Emoji Memory
+function initEmojiMemory() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Emoji Memory</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="emoji-level">1</span>
+            </div>
+        </div>
+        <div id="emoji-display" class="test-area" style="font-size: 80px;"></div>
+        <div id="emoji-options" style="display: flex; justify-content: center; gap: 20px; margin-top: 20px; display: none;"></div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px; margin-top: 20px;">
+            Click to start
+        </div>
+    `;
+    
+    const emojis = ['😀', '😎', '🤖', '👽', '🦄', '🐉', '🎯', '🎮', '🚀', '⭐', '🔥', '💎'];
+    let started = false;
+    
+    const startHandler = () => {
+        if (!started) {
+            started = true;
+            document.removeEventListener('click', startHandler);
+            startEmojiMemory();
+        }
+    };
+    document.addEventListener('click', startHandler);
+    
+    function startEmojiMemory() {
+        let level = 1;
+        
+        function showEmojis() {
+            const count = level + 2;
+            const sequence = [];
+            for (let i = 0; i < count; i++) {
+                sequence.push(emojis[Math.floor(Math.random() * emojis.length)]);
+            }
+            
+            document.getElementById('emoji-level').textContent = level;
+            document.getElementById('emoji-display').textContent = sequence.join(' ');
+            document.getElementById('emoji-options').style.display = 'none';
+            
+            setTimeout(() => {
+                document.getElementById('emoji-display').textContent = '';
+                const options = document.getElementById('emoji-options');
+                options.innerHTML = '';
+                options.style.display = 'flex';
+                
+                const correctEmoji = sequence[Math.floor(Math.random() * sequence.length)];
+                const wrongEmojis = emojis.filter(e => !sequence.includes(e)).slice(0, 3);
+                const allOptions = [correctEmoji, ...wrongEmojis].sort(() => Math.random() - 0.5);
+                
+                allOptions.forEach(emoji => {
+                    const btn = document.createElement('div');
+                    btn.style.fontSize = '64px';
+                    btn.style.cursor = 'pointer';
+                    btn.style.padding = '10px';
+                    btn.style.backgroundColor = 'var(--bg-secondary)';
+                    btn.style.border = '3px solid var(--border-primary)';
+                    btn.textContent = emoji;
+                    btn.onclick = () => {
+                        if (emoji === correctEmoji) {
+                            level++;
+                            setTimeout(showEmojis, 500);
+                        } else {
+                            document.getElementById('emoji-display').textContent = `Game Over! Level: ${level}`;
+                            options.style.display = 'none';
+                        }
+                    };
+                    options.appendChild(btn);
+                });
+            }, 3000 + level * 500);
+        }
+        
+        showEmojis();
+    }
+}
+
+// 40. Quick Decision
+function initQuickDecision() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Quick Decision</h2>
+        <p style="text-align: center; color: var(--text-secondary); font-size: 24px;">
+            Choose the larger number quickly!
+        </p>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="decision-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Streak:</span>
+                <span class="stat-value" id="decision-streak">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="decision-time">30</span>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 40px; margin: 40px 0;">
+            <div id="decision-left" class="answer-option" style="font-size: 80px; min-width: 200px; text-align: center;"></div>
+            <div id="decision-right" class="answer-option" style="font-size: 80px; min-width: 200px; text-align: center;"></div>
+        </div>
+    `;
+    
+    let score = 0;
+    let streak = 0;
+    let timeLeft = 30;
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('decision-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            document.querySelector('.answer-option').onclick = null;
+            document.getElementById('decision-left').textContent = `Game Over!`;
+            document.getElementById('decision-right').textContent = `Score: ${score}`;
+        }
+    }, 1000);
+    
+    function newQuestion() {
+        const num1 = Math.floor(Math.random() * 100) + 1;
+        let num2 = Math.floor(Math.random() * 100) + 1;
+        while (num1 === num2) num2 = Math.floor(Math.random() * 100) + 1;
+        
+        const left = document.getElementById('decision-left');
+        const right = document.getElementById('decision-right');
+        
+        left.textContent = num1;
+        right.textContent = num2;
+        
+        left.onclick = () => checkAnswer(num1, num2);
+        right.onclick = () => checkAnswer(num2, num1);
+    }
+    
+    function checkAnswer(chosen, other) {
+        if (chosen > other) {
+            score++;
+            streak++;
+            document.getElementById('decision-score').textContent = score;
+            document.getElementById('decision-streak').textContent = streak;
+        } else {
+            streak = 0;
+            document.getElementById('decision-streak').textContent = streak;
+        }
+        if (timeLeft > 0) newQuestion();
+    }
+    
+    newQuestion();
+}
