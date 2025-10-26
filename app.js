@@ -1,7 +1,167 @@
+// Sound System using Web Audio API
+const SoundSystem = {
+    audioContext: null,
+    enabled: true,
+    
+    init() {
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) {
+            console.log('Web Audio API not supported');
+            this.enabled = false;
+        }
+    },
+    
+    playClick() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.1);
+    },
+    
+    playSuccess() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(659, this.audioContext.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(784, this.audioContext.currentTime + 0.2);
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.3);
+    },
+    
+    playFailure() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.setValueAtTime(400, this.audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime + 0.15);
+        oscillator.type = 'sawtooth';
+        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.2);
+    },
+    
+    playPowerUp() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.setValueAtTime(200, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(800, this.audioContext.currentTime + 0.3);
+        oscillator.type = 'square';
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.3);
+    },
+    
+    playHover() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.value = 600;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.05, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.05);
+    }
+};
+
+// Visual Effects System
+const VisualEffects = {
+    createConfetti(x, y) {
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+        for (let i = 0; i < 30; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'fixed';
+            confetti.style.left = x + 'px';
+            confetti.style.top = y + 'px';
+            confetti.style.width = '10px';
+            confetti.style.height = '10px';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.pointerEvents = 'none';
+            confetti.style.zIndex = '9999';
+            confetti.style.borderRadius = '50%';
+            document.body.appendChild(confetti);
+            
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = 5 + Math.random() * 10;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity - 5;
+            
+            let posX = x;
+            let posY = y;
+            let velX = vx;
+            let velY = vy;
+            
+            const animate = () => {
+                velY += 0.5;
+                posX += velX;
+                posY += velY;
+                confetti.style.left = posX + 'px';
+                confetti.style.top = posY + 'px';
+                confetti.style.opacity = Math.max(0, 1 - (posY - y) / 300);
+                
+                if (posY < window.innerHeight + 50) {
+                    requestAnimationFrame(animate);
+                } else {
+                    confetti.remove();
+                }
+            };
+            requestAnimationFrame(animate);
+        }
+    },
+    
+    shakeElement(element) {
+        element.style.animation = 'shake 0.5s';
+        setTimeout(() => {
+            element.style.animation = '';
+        }, 500);
+    },
+    
+    pulseElement(element) {
+        element.style.animation = 'pulse 0.5s';
+        setTimeout(() => {
+            element.style.animation = '';
+        }, 500);
+    },
+    
+    flashElement(element, color) {
+        const originalBg = element.style.backgroundColor;
+        element.style.backgroundColor = color;
+        element.style.transition = 'background-color 0.3s';
+        setTimeout(() => {
+            element.style.backgroundColor = originalBg;
+        }, 300);
+    }
+};
+
 // Theme management
 function toggleTheme() {
     const body = document.body;
     const button = document.getElementById('theme-toggle');
+    
+    SoundSystem.playClick();
     
     if (body.classList.contains('light-theme')) {
         body.classList.remove('light-theme');
@@ -24,6 +184,16 @@ window.addEventListener('DOMContentLoaded', () => {
         body.classList.add('light-theme');
         button.textContent = '🌙 Dark Mode';
     }
+    
+    // Initialize sound system
+    SoundSystem.init();
+    
+    // Add hover sounds to game cards
+    document.querySelectorAll('.game-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            SoundSystem.playHover();
+        });
+    });
 });
 
 // Game state management
@@ -32,6 +202,7 @@ let gameData = {};
 
 // Navigation
 function loadGame(gameName) {
+    SoundSystem.playClick();
     currentGame = gameName;
     document.getElementById('game-menu').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
@@ -39,6 +210,7 @@ function loadGame(gameName) {
     
     const container = document.getElementById('game-container');
     container.innerHTML = '';
+    container.style.animation = 'slideIn 0.3s ease-out';
     
     switch(gameName) {
         case 'click-speed': initClickSpeed(); break;
@@ -81,10 +253,16 @@ function loadGame(gameName) {
         case 'precision-click': initPrecisionClick(); break;
         case 'emoji-memory': initEmojiMemory(); break;
         case 'quick-decision': initQuickDecision(); break;
+        case 'snake-game': initSnakeGame(); break;
+        case 'whack-a-mole': initWhackAMole(); break;
+        case 'space-invaders': initSpaceInvaders(); break;
+        case 'match-3': initMatch3(); break;
+        case 'runner-game': initRunnerGame(); break;
     }
 }
 
 function backToMenu() {
+    SoundSystem.playClick();
     currentGame = null;
     gameData = {};
     document.getElementById('game-menu').classList.remove('hidden');
@@ -925,6 +1103,66 @@ function startProgramming() {
             question: "Which method adds an element to the end of an array?",
             answers: ["push()", "pop()", "shift()", "unshift()"],
             correct: 0
+        },
+        {
+            question: "What does API stand for?",
+            answers: ["Application Programming Interface", "Advanced Programming Integration", "Automated Program Interaction", "Application Process Interface"],
+            correct: 0
+        },
+        {
+            question: "Which HTML tag is used for the largest heading?",
+            answers: ["<head>", "<h6>", "<h1>", "<heading>"],
+            correct: 2
+        },
+        {
+            question: "What is the correct syntax for a JavaScript function?",
+            answers: ["function myFunc()", "function:myFunc()", "def myFunc()", "func myFunc()"],
+            correct: 0
+        },
+        {
+            question: "Which CSS property controls text size?",
+            answers: ["text-size", "font-size", "text-style", "font-style"],
+            correct: 1
+        },
+        {
+            question: "What does DOM stand for?",
+            answers: ["Document Object Model", "Data Object Management", "Digital Output Method", "Display Object Module"],
+            correct: 0
+        },
+        {
+            question: "Which loop iterates a specific number of times?",
+            answers: ["while", "do-while", "for", "foreach"],
+            correct: 2
+        },
+        {
+            question: "What is the result of 3 + '3' in JavaScript?",
+            answers: ["6", "33", "9", "error"],
+            correct: 1
+        },
+        {
+            question: "Which method removes the last element from an array?",
+            answers: ["pop()", "push()", "delete()", "remove()"],
+            correct: 0
+        },
+        {
+            question: "What is JSON?",
+            answers: ["JavaScript Object Notation", "Java Standard Object Notation", "JavaScript Online Network", "Java Source Object Name"],
+            correct: 0
+        },
+        {
+            question: "Which keyword is used to create a constant in JavaScript?",
+            answers: ["var", "let", "const", "constant"],
+            correct: 2
+        },
+        {
+            question: "What is the purpose of 'use strict' in JavaScript?",
+            answers: ["Makes code run faster", "Enables strict mode", "Requires semicolons", "Enables type checking"],
+            correct: 1
+        },
+        {
+            question: "Which CSS property is used to change background color?",
+            answers: ["bgcolor", "background-color", "color", "bg-color"],
+            correct: 1
         }
     ];
     
@@ -933,22 +1171,41 @@ function startProgramming() {
     
     function showQuestion() {
         if (currentQ >= questions.length) {
-            document.getElementById('prog-quiz').innerHTML = `
-                <div class="results">
-                    <h3>Quiz Complete!</h3>
-                    <div class="score">Score: ${score}/${questions.length}</div>
-                    <p>${(score / questions.length * 100).toFixed(0)}% Correct</p>
+            const percentage = (score / questions.length * 100).toFixed(0);
+            const isPerfect = score === questions.length;
+            const container = document.getElementById('prog-quiz');
+            
+            container.innerHTML = `
+                <div class="results" style="animation: scaleIn 0.5s ease-out;">
+                    <h3>${isPerfect ? '🎉 PERFECT SCORE! 🎉' : 'Quiz Complete!'}</h3>
+                    <div class="score">${score}/${questions.length}</div>
+                    <p style="font-size: 48px; color: var(--text-accent);">${percentage}% Correct</p>
+                    <p style="font-size: 32px; margin-top: 20px;">${
+                        percentage == 100 ? 'Outstanding! You are a programming master! 🏆' :
+                        percentage >= 80 ? 'Excellent work! Keep it up! 🌟' :
+                        percentage >= 60 ? 'Good job! Keep learning! 📚' :
+                        'Keep practicing! You will get better! 💪'
+                    }</p>
                 </div>
             `;
+            
+            if (isPerfect) {
+                SoundSystem.playSuccess();
+                SoundSystem.playPowerUp();
+                const rect = container.getBoundingClientRect();
+                VisualEffects.createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            } else if (percentage >= 80) {
+                SoundSystem.playSuccess();
+            }
             return;
         }
         
         const q = questions[currentQ];
         document.getElementById('prog-question-num').textContent = `${currentQ + 1}/${questions.length}`;
         
-        let html = `<div class="question">${q.question}</div><div class="answer-options">`;
+        let html = `<div class="question" style="animation: fadeIn 0.3s;">${q.question}</div><div class="answer-options">`;
         q.answers.forEach((answer, i) => {
-            html += `<div class="answer-option" onclick="checkProgrammingAnswer(${i})">${answer}</div>`;
+            html += `<div class="answer-option" onclick="checkProgrammingAnswer(${i})" style="animation: slideIn 0.3s ease-out ${i * 0.1}s both;">${answer}</div>`;
         });
         html += `</div>`;
         document.getElementById('prog-quiz').innerHTML = html;
@@ -958,12 +1215,20 @@ function startProgramming() {
         const q = questions[currentQ];
         const options = document.querySelectorAll('.answer-option');
         
+        // Disable all options
+        options.forEach(opt => opt.onclick = null);
+        
         options[selected].classList.add(selected === q.correct ? 'correct' : 'incorrect');
         options[q.correct].classList.add('correct');
         
         if (selected === q.correct) {
             score++;
             document.getElementById('prog-score').textContent = score;
+            SoundSystem.playSuccess();
+            VisualEffects.pulseElement(options[selected]);
+        } else {
+            SoundSystem.playFailure();
+            VisualEffects.shakeElement(options[selected]);
         }
         
         setTimeout(() => {
@@ -3613,4 +3878,720 @@ function initQuickDecision() {
     }
     
     newQuestion();
+}
+
+// 41. Snake Game
+function initSnakeGame() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Snake Game</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="snake-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">High Score:</span>
+                <span class="stat-value" id="snake-high">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="snake-canvas" width="400" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Use Arrow Keys to move. Press any arrow key to start!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('snake-canvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 20;
+    const tileCount = 20;
+    
+    let snake = [{ x: 10, y: 10 }];
+    let food = { x: 15, y: 15 };
+    let dx = 0;
+    let dy = 0;
+    let score = 0;
+    let gameLoop = null;
+    let gameStarted = false;
+    
+    const highScore = parseInt(localStorage.getItem('snakeHighScore') || '0');
+    document.getElementById('snake-high').textContent = highScore;
+    
+    ctx.fillStyle = 'var(--bg-primary)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    function drawGame() {
+        // Clear canvas
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw snake
+        ctx.fillStyle = '#00ff00';
+        snake.forEach((segment, index) => {
+            if (index === 0) {
+                ctx.fillStyle = '#00ff00';
+            } else {
+                ctx.fillStyle = '#00cc00';
+            }
+            ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+        });
+        
+        // Draw food
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    function update() {
+        if (!gameStarted) return;
+        
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+        
+        // Check wall collision
+        if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+            gameOver();
+            return;
+        }
+        
+        // Check self collision
+        if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            gameOver();
+            return;
+        }
+        
+        snake.unshift(head);
+        
+        // Check food collision
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            document.getElementById('snake-score').textContent = score;
+            SoundSystem.playSuccess();
+            placeFood();
+            
+            if (score > highScore) {
+                localStorage.setItem('snakeHighScore', score);
+                document.getElementById('snake-high').textContent = score;
+            }
+        } else {
+            snake.pop();
+        }
+        
+        drawGame();
+    }
+    
+    function placeFood() {
+        food = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+        
+        // Make sure food doesn't spawn on snake
+        while (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
+            food = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+        }
+    }
+    
+    function gameOver() {
+        clearInterval(gameLoop);
+        SoundSystem.playFailure();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '48px VT323';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '32px VT323';
+        ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (!gameStarted && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            gameStarted = true;
+            gameLoop = setInterval(update, 100);
+            SoundSystem.playClick();
+        }
+        
+        if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
+        if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
+        if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
+        if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
+    });
+    
+    drawGame();
+}
+
+// 42. Whack-a-Mole
+function initWhackAMole() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Whack-a-Mole</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="mole-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Misses:</span>
+                <span class="stat-value" id="mole-misses">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="mole-time">30</span>
+            </div>
+        </div>
+        <div id="mole-grid" style="display: grid; grid-template-columns: repeat(3, 150px); gap: 20px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const grid = document.getElementById('mole-grid');
+    let score = 0;
+    let misses = 0;
+    let timeLeft = 30;
+    let gameActive = true;
+    
+    // Create holes
+    for (let i = 0; i < 9; i++) {
+        const hole = document.createElement('div');
+        hole.style.width = '150px';
+        hole.style.height = '150px';
+        hole.style.backgroundColor = 'var(--bg-secondary)';
+        hole.style.border = '5px solid var(--border-primary)';
+        hole.style.borderRadius = '50%';
+        hole.style.position = 'relative';
+        hole.style.overflow = 'hidden';
+        hole.style.cursor = 'pointer';
+        hole.dataset.index = i;
+        
+        hole.onclick = () => {
+            if (!hole.classList.contains('has-mole')) {
+                misses++;
+                document.getElementById('mole-misses').textContent = misses;
+                SoundSystem.playFailure();
+                VisualEffects.shakeElement(hole);
+            }
+        };
+        
+        grid.appendChild(hole);
+    }
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('mole-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            gameActive = false;
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 48px;">
+                Game Over!<br>Score: ${score}<br>Accuracy: ${score + misses > 0 ? ((score / (score + misses)) * 100).toFixed(1) : 0}%
+            </div>`;
+            if (score >= 20) {
+                SoundSystem.playSuccess();
+            }
+        }
+    }, 1000);
+    
+    function spawnMole() {
+        if (!gameActive) return;
+        
+        const holes = Array.from(grid.children).filter(h => !h.classList.contains('has-mole'));
+        if (holes.length === 0) return;
+        
+        const hole = holes[Math.floor(Math.random() * holes.length)];
+        hole.classList.add('has-mole');
+        
+        const mole = document.createElement('div');
+        mole.style.position = 'absolute';
+        mole.style.bottom = '0';
+        mole.style.left = '50%';
+        mole.style.transform = 'translateX(-50%)';
+        mole.style.width = '80px';
+        mole.style.height = '80px';
+        mole.style.backgroundColor = 'var(--color-orange)';
+        mole.style.borderRadius = '50% 50% 40% 40%';
+        mole.style.animation = 'bounce 0.5s ease-out';
+        mole.textContent = '👀';
+        mole.style.fontSize = '48px';
+        mole.style.textAlign = 'center';
+        mole.style.lineHeight = '80px';
+        hole.appendChild(mole);
+        
+        mole.onclick = (e) => {
+            e.stopPropagation();
+            score++;
+            document.getElementById('mole-score').textContent = score;
+            SoundSystem.playSuccess();
+            mole.remove();
+            hole.classList.remove('has-mole');
+            VisualEffects.pulseElement(hole);
+        };
+        
+        setTimeout(() => {
+            if (mole.parentNode) {
+                mole.remove();
+                hole.classList.remove('has-mole');
+            }
+        }, 1000 + Math.random() * 1000);
+    }
+    
+    setInterval(() => {
+        if (gameActive) spawnMole();
+    }, 800);
+    
+    SoundSystem.playClick();
+}
+
+// 43. Space Invaders Mini
+function initSpaceInvaders() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Space Invaders Mini</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="invaders-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="invaders-lives">3</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="invaders-canvas" width="600" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Use ← → to move, SPACE to shoot
+        </div>
+    `;
+    
+    const canvas = document.getElementById('invaders-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let player = { x: 280, y: 360, width: 40, height: 20 };
+    let bullets = [];
+    let invaders = [];
+    let score = 0;
+    let lives = 3;
+    let gameActive = true;
+    
+    // Create invaders
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 8; col++) {
+            invaders.push({
+                x: col * 60 + 50,
+                y: row * 40 + 30,
+                width: 40,
+                height: 30,
+                alive: true
+            });
+        }
+    }
+    
+    let invaderDirection = 1;
+    
+    const keys = {};
+    document.addEventListener('keydown', (e) => {
+        keys[e.key] = true;
+        if (e.key === ' ') {
+            e.preventDefault();
+            if (bullets.length < 3) {
+                bullets.push({ x: player.x + 18, y: player.y, width: 4, height: 10 });
+                SoundSystem.playClick();
+            }
+        }
+    });
+    document.addEventListener('keyup', (e) => {
+        keys[e.key] = false;
+    });
+    
+    function update() {
+        if (!gameActive) return;
+        
+        // Move player
+        if (keys['ArrowLeft'] && player.x > 0) player.x -= 5;
+        if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += 5;
+        
+        // Move bullets
+        bullets = bullets.filter(b => {
+            b.y -= 8;
+            return b.y > 0;
+        });
+        
+        // Move invaders
+        let shouldMoveDown = false;
+        const aliveInvaders = invaders.filter(inv => inv.alive);
+        
+        aliveInvaders.forEach(inv => {
+            inv.x += invaderDirection * 2;
+            if (inv.x <= 0 || inv.x >= canvas.width - inv.width) {
+                shouldMoveDown = true;
+            }
+        });
+        
+        if (shouldMoveDown) {
+            invaderDirection *= -1;
+            invaders.forEach(inv => {
+                if (inv.alive) inv.y += 20;
+            });
+        }
+        
+        // Check bullet-invader collision
+        bullets.forEach((bullet, bi) => {
+            invaders.forEach((inv) => {
+                if (inv.alive && 
+                    bullet.x < inv.x + inv.width &&
+                    bullet.x + bullet.width > inv.x &&
+                    bullet.y < inv.y + inv.height &&
+                    bullet.y + bullet.height > inv.y) {
+                    inv.alive = false;
+                    bullets[bi] = null;
+                    score += 10;
+                    document.getElementById('invaders-score').textContent = score;
+                    SoundSystem.playSuccess();
+                }
+            });
+        });
+        bullets = bullets.filter(b => b !== null);
+        
+        // Check if invaders reached bottom
+        aliveInvaders.forEach(inv => {
+            if (inv.y + inv.height >= player.y) {
+                lives = 0;
+            }
+        });
+        
+        // Check win/loss
+        if (invaders.every(inv => !inv.alive)) {
+            gameActive = false;
+            SoundSystem.playSuccess();
+            SoundSystem.playPowerUp();
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '48px VT323';
+            ctx.textAlign = 'center';
+            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+        }
+        
+        if (lives <= 0) {
+            gameActive = false;
+            document.getElementById('invaders-lives').textContent = 0;
+            SoundSystem.playFailure();
+            ctx.fillStyle = '#ff0000';
+            ctx.font = '48px VT323';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+        } else {
+            document.getElementById('invaders-lives').textContent = lives;
+        }
+        
+        draw();
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw player
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Draw bullets
+        ctx.fillStyle = '#ffff00';
+        bullets.forEach(b => {
+            ctx.fillRect(b.x, b.y, b.width, b.height);
+        });
+        
+        // Draw invaders
+        ctx.fillStyle = '#ff0000';
+        invaders.forEach(inv => {
+            if (inv.alive) {
+                ctx.fillRect(inv.x, inv.y, inv.width, inv.height);
+            }
+        });
+    }
+    
+    setInterval(update, 1000 / 60);
+}
+
+// 44. Match-3 Puzzle
+function initMatch3() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Match-3 Puzzle</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="match3-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="match3-moves">30</span>
+            </div>
+        </div>
+        <div id="match3-grid" style="display: grid; grid-template-columns: repeat(8, 50px); gap: 5px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const colors = ['🔴', '🔵', '🟢', '🟡', '🟣', '🟠'];
+    const gridSize = 8;
+    let grid = [];
+    let selected = null;
+    let score = 0;
+    let moves = 30;
+    
+    function createGrid() {
+        grid = [];
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            grid.push(colors[Math.floor(Math.random() * colors.length)]);
+        }
+        renderGrid();
+    }
+    
+    function renderGrid() {
+        const gridEl = document.getElementById('match3-grid');
+        gridEl.innerHTML = '';
+        
+        grid.forEach((color, index) => {
+            const cell = document.createElement('div');
+            cell.style.width = '50px';
+            cell.style.height = '50px';
+            cell.style.backgroundColor = 'var(--bg-secondary)';
+            cell.style.border = '3px solid var(--border-primary)';
+            cell.style.fontSize = '32px';
+            cell.style.display = 'flex';
+            cell.style.alignItems = 'center';
+            cell.style.justifyContent = 'center';
+            cell.style.cursor = 'pointer';
+            cell.textContent = color;
+            cell.dataset.index = index;
+            
+            cell.onclick = () => selectCell(index);
+            gridEl.appendChild(cell);
+        });
+    }
+    
+    function selectCell(index) {
+        if (moves <= 0) return;
+        
+        const cells = document.querySelectorAll('#match3-grid > div');
+        
+        if (selected === null) {
+            selected = index;
+            cells[index].style.border = '3px solid var(--text-accent)';
+            SoundSystem.playClick();
+        } else {
+            const row1 = Math.floor(selected / gridSize);
+            const col1 = selected % gridSize;
+            const row2 = Math.floor(index / gridSize);
+            const col2 = index % gridSize;
+            
+            const isAdjacent = (Math.abs(row1 - row2) === 1 && col1 === col2) ||
+                              (Math.abs(col1 - col2) === 1 && row1 === row2);
+            
+            if (isAdjacent) {
+                [grid[selected], grid[index]] = [grid[index], grid[selected]];
+                moves--;
+                document.getElementById('match3-moves').textContent = moves;
+                checkMatches();
+            }
+            
+            cells[selected].style.border = '3px solid var(--border-primary)';
+            selected = null;
+            renderGrid();
+        }
+    }
+    
+    function checkMatches() {
+        let foundMatch = false;
+        const matched = new Set();
+        
+        // Check horizontal matches
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize - 2; col++) {
+                const idx = row * gridSize + col;
+                if (grid[idx] === grid[idx + 1] && grid[idx] === grid[idx + 2]) {
+                    matched.add(idx);
+                    matched.add(idx + 1);
+                    matched.add(idx + 2);
+                    foundMatch = true;
+                }
+            }
+        }
+        
+        // Check vertical matches
+        for (let col = 0; col < gridSize; col++) {
+            for (let row = 0; row < gridSize - 2; row++) {
+                const idx = row * gridSize + col;
+                if (grid[idx] === grid[idx + gridSize] && grid[idx] === grid[idx + gridSize * 2]) {
+                    matched.add(idx);
+                    matched.add(idx + gridSize);
+                    matched.add(idx + gridSize * 2);
+                    foundMatch = true;
+                }
+            }
+        }
+        
+        if (foundMatch) {
+            score += matched.size * 10;
+            document.getElementById('match3-score').textContent = score;
+            SoundSystem.playSuccess();
+            
+            matched.forEach(idx => {
+                grid[idx] = colors[Math.floor(Math.random() * colors.length)];
+            });
+            
+            setTimeout(() => {
+                renderGrid();
+                checkMatches();
+            }, 300);
+        }
+        
+        if (moves <= 0) {
+            setTimeout(() => {
+                const gridEl = document.getElementById('match3-grid');
+                gridEl.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 48px;">
+                    Game Over!<br>Final Score: ${score}
+                </div>`;
+            }, 500);
+        }
+    }
+    
+    createGrid();
+}
+
+// 45. Runner Game
+function initRunnerGame() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Runner Game</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="runner-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Best:</span>
+                <span class="stat-value" id="runner-best">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="runner-canvas" width="600" height="300"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Press SPACE to jump!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('runner-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let player = { x: 50, y: 200, width: 30, height: 30, velocityY: 0, jumping: false };
+    let obstacles = [];
+    let score = 0;
+    let gameActive = true;
+    let speed = 5;
+    
+    const bestScore = parseInt(localStorage.getItem('runnerBest') || '0');
+    document.getElementById('runner-best').textContent = bestScore;
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !player.jumping) {
+            e.preventDefault();
+            player.velocityY = -12;
+            player.jumping = true;
+            SoundSystem.playClick();
+        }
+    });
+    
+    function update() {
+        if (!gameActive) return;
+        
+        // Update player
+        player.velocityY += 0.6;
+        player.y += player.velocityY;
+        
+        if (player.y >= 200) {
+            player.y = 200;
+            player.velocityY = 0;
+            player.jumping = false;
+        }
+        
+        // Update obstacles
+        obstacles.forEach(obs => {
+            obs.x -= speed;
+        });
+        
+        obstacles = obstacles.filter(obs => obs.x > -obs.width);
+        
+        // Spawn obstacles
+        if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < 400) {
+            obstacles.push({
+                x: 600,
+                y: 210,
+                width: 20 + Math.random() * 20,
+                height: 20 + Math.random() * 40
+            });
+        }
+        
+        // Check collision
+        obstacles.forEach(obs => {
+            if (player.x < obs.x + obs.width &&
+                player.x + player.width > obs.x &&
+                player.y < obs.y + obs.height &&
+                player.y + player.height > obs.y) {
+                gameActive = false;
+                SoundSystem.playFailure();
+                
+                if (score > bestScore) {
+                    localStorage.setItem('runnerBest', score);
+                    document.getElementById('runner-best').textContent = score;
+                }
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff0000';
+                ctx.font = '48px VT323';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '32px VT323';
+                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
+            }
+        });
+        
+        // Update score
+        score++;
+        document.getElementById('runner-score').textContent = Math.floor(score / 10);
+        
+        // Increase speed
+        if (score % 500 === 0) {
+            speed += 0.5;
+        }
+        
+        draw();
+    }
+    
+    function draw() {
+        // Clear canvas
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw ground
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(0, 230, canvas.width, 70);
+        
+        // Draw player
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Draw obstacles
+        ctx.fillStyle = '#ff0000';
+        obstacles.forEach(obs => {
+            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+        });
+    }
+    
+    setInterval(update, 1000 / 60);
 }
