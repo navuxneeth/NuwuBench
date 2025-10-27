@@ -1,13 +1,14 @@
 # NuwuBench
 
-A retro-styled human benchmark testing website featuring 45 interactive games to test various cognitive and motor skills.
+A retro-styled human benchmark testing website featuring 50 interactive games to test various cognitive and motor skills.
 
 ## Features
 
 - **VT323 Retro Font**: Authentic pixel-style monospace typography
 - **Theme Switcher**: Toggle between dark mode (default) and light mode
 - **Auto-Start Games**: Games begin as soon as you start interacting - no START buttons needed!
-- **45 Unique Tests**: Comprehensive collection of human capability benchmarks
+- **Restart Functionality**: Easily restart any game with the "Play Again" button
+- **50 Unique Tests**: Comprehensive collection of human capability benchmarks
 - **Sound Effects**: Interactive audio feedback using Web Audio API
 - **Animations & Effects**: Confetti, shake effects, smooth transitions, and particle effects
 - **Fully Customizable**: Adjustable difficulty, duration, and settings for all tests
@@ -151,6 +152,21 @@ Match three or more colored emojis in a row. Limited moves with combo scoring.
 ### 45. Runner Game 🎮
 Endless runner challenge. Press SPACE to jump over obstacles. Progressive speed increase.
 
+### 46. Breakout Game 🎮
+Classic brick breaker game. Use arrow keys to move the paddle and bounce the ball to destroy all bricks.
+
+### 47. Flappy Bird 🎮
+Navigate through pipes by pressing SPACE or clicking to flap. Score points and track your best!
+
+### 48. Color Memory Test 🧠
+Advanced color sequence memory game. Memorize and repeat increasingly complex color patterns on a grid.
+
+### 49. Word Association 🧠
+Match related words quickly. Test your vocabulary and cognitive connections under time pressure.
+
+### 50. Maze Navigator 🎮
+Navigate through randomly generated mazes using arrow keys. Reach the goal to advance levels!
+
 ## How to Use
 
 1. Open `index.html` in a web browser
@@ -160,8 +176,9 @@ Endless runner challenge. Press SPACE to jump over obstacles. Progressive speed 
    - Start typing
    - Press a key
    - Or simply interact with the game
-4. Use the "Back to Menu" button to return to game selection
-5. Toggle between light and dark themes using the button in the header
+4. Use the "🔄 Play Again" button to restart the current game instantly
+5. Use the "Back to Menu" button to return to game selection
+6. Toggle between light and dark themes using the button in the header
 
 ## Interactive Features
 

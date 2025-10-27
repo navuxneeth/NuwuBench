@@ -207,6 +207,7 @@ function loadGame(gameName) {
     document.getElementById('game-menu').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
     document.getElementById('back-button').classList.remove('hidden');
+    document.getElementById('restart-button').classList.remove('hidden');
     
     const container = document.getElementById('game-container');
     container.innerHTML = '';
@@ -258,6 +259,11 @@ function loadGame(gameName) {
         case 'space-invaders': initSpaceInvaders(); break;
         case 'match-3': initMatch3(); break;
         case 'runner-game': initRunnerGame(); break;
+        case 'breakout': initBreakout(); break;
+        case 'flappy-bird': initFlappyBird(); break;
+        case 'color-memory-test': initColorMemoryTest(); break;
+        case 'word-association': initWordAssociation(); break;
+        case 'maze-navigator': initMazeNavigator(); break;
     }
 }
 
@@ -268,6 +274,14 @@ function backToMenu() {
     document.getElementById('game-menu').classList.remove('hidden');
     document.getElementById('game-container').classList.add('hidden');
     document.getElementById('back-button').classList.add('hidden');
+    document.getElementById('restart-button').classList.add('hidden');
+}
+
+function restartGame() {
+    SoundSystem.playClick();
+    if (currentGame) {
+        loadGame(currentGame);
+    }
 }
 
 // 1. Click Speed Test
@@ -4594,4 +4608,683 @@ function initRunnerGame() {
     }
     
     setInterval(update, 1000 / 60);
+}
+
+// 46. Breakout Game
+function initBreakout() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Breakout Game</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="breakout-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="breakout-lives">3</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="breakout-canvas" width="600" height="500"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Use ← → to move paddle, or click to start!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('breakout-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let paddle = { x: 250, y: 460, width: 100, height: 15, speed: 7 };
+    let ball = { x: 300, y: 400, radius: 8, dx: 3, dy: -3 };
+    let bricks = [];
+    let score = 0;
+    let lives = 3;
+    let gameActive = false;
+    
+    const brickRows = 5;
+    const brickCols = 8;
+    const brickWidth = 70;
+    const brickHeight = 20;
+    const brickPadding = 5;
+    const brickOffsetTop = 50;
+    const brickOffsetLeft = 10;
+    
+    for (let r = 0; r < brickRows; r++) {
+        bricks[r] = [];
+        for (let c = 0; c < brickCols; c++) {
+            bricks[r][c] = { x: 0, y: 0, status: 1 };
+        }
+    }
+    
+    const keys = {};
+    document.addEventListener('keydown', (e) => { keys[e.key] = true; });
+    document.addEventListener('keyup', (e) => { keys[e.key] = false; });
+    
+    canvas.onclick = () => {
+        if (!gameActive) {
+            gameActive = true;
+            SoundSystem.playClick();
+        }
+    };
+    
+    function drawBricks() {
+        const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff'];
+        for (let r = 0; r < brickRows; r++) {
+            for (let c = 0; c < brickCols; c++) {
+                if (bricks[r][c].status === 1) {
+                    const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
+                    const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
+                    bricks[r][c].x = brickX;
+                    bricks[r][c].y = brickY;
+                    ctx.fillStyle = colors[r];
+                    ctx.fillRect(brickX, brickY, brickWidth, brickHeight);
+                    ctx.strokeStyle = '#000';
+                    ctx.strokeRect(brickX, brickY, brickWidth, brickHeight);
+                }
+            }
+        }
+    }
+    
+    function collisionDetection() {
+        for (let r = 0; r < brickRows; r++) {
+            for (let c = 0; c < brickCols; c++) {
+                const b = bricks[r][c];
+                if (b.status === 1) {
+                    if (ball.x > b.x && ball.x < b.x + brickWidth &&
+                        ball.y > b.y && ball.y < b.y + brickHeight) {
+                        ball.dy = -ball.dy;
+                        b.status = 0;
+                        score += 10;
+                        document.getElementById('breakout-score').textContent = score;
+                        SoundSystem.playSuccess();
+                    }
+                }
+            }
+        }
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        drawBricks();
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    function update() {
+        if (!gameActive) {
+            draw();
+            return;
+        }
+        
+        if (keys['ArrowLeft'] && paddle.x > 0) paddle.x -= paddle.speed;
+        if (keys['ArrowRight'] && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+        
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+        
+        if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+            ball.dx = -ball.dx;
+        }
+        if (ball.y - ball.radius < 0) {
+            ball.dy = -ball.dy;
+        }
+        
+        if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+            ball.dy = -ball.dy;
+            SoundSystem.playClick();
+        }
+        
+        if (ball.y + ball.radius > canvas.height) {
+            lives--;
+            document.getElementById('breakout-lives').textContent = lives;
+            if (lives > 0) {
+                ball.x = 300;
+                ball.y = 400;
+                ball.dx = 3;
+                ball.dy = -3;
+                gameActive = false;
+                SoundSystem.playFailure();
+            } else {
+                gameActive = false;
+                SoundSystem.playFailure();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ff0000';
+                ctx.font = '48px VT323';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+            }
+        }
+        
+        collisionDetection();
+        
+        let allBricksGone = true;
+        for (let r = 0; r < brickRows; r++) {
+            for (let c = 0; c < brickCols; c++) {
+                if (bricks[r][c].status === 1) {
+                    allBricksGone = false;
+                }
+            }
+        }
+        
+        if (allBricksGone) {
+            gameActive = false;
+            SoundSystem.playSuccess();
+            SoundSystem.playPowerUp();
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '48px VT323';
+            ctx.textAlign = 'center';
+            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+        }
+        
+        draw();
+    }
+    
+    setInterval(update, 1000 / 60);
+}
+
+// 47. Flappy Bird Clone
+function initFlappyBird() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Flappy Bird</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="flappy-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Best:</span>
+                <span class="stat-value" id="flappy-best">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="flappy-canvas" width="400" height="600"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Press SPACE or Click to Flap!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('flappy-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let bird = { x: 50, y: 250, width: 30, height: 30, velocity: 0, gravity: 0.5, jump: -8 };
+    let pipes = [];
+    let score = 0;
+    let gameActive = false;
+    const pipeWidth = 50;
+    const pipeGap = 150;
+    
+    const bestScore = parseInt(localStorage.getItem('flappyBest') || '0');
+    document.getElementById('flappy-best').textContent = bestScore;
+    
+    function flap() {
+        if (!gameActive) {
+            gameActive = true;
+            SoundSystem.playClick();
+        }
+        bird.velocity = bird.jump;
+        SoundSystem.playClick();
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            flap();
+        }
+    });
+    
+    canvas.onclick = flap;
+    
+    function createPipe() {
+        const minHeight = 50;
+        const maxHeight = canvas.height - pipeGap - minHeight;
+        const height = Math.random() * (maxHeight - minHeight) + minHeight;
+        pipes.push({
+            x: canvas.width,
+            top: height,
+            bottom: height + pipeGap,
+            scored: false
+        });
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#87ceeb';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        
+        ctx.fillStyle = '#00ff00';
+        pipes.forEach(pipe => {
+            ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+            ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+        });
+    }
+    
+    function update() {
+        if (!gameActive) {
+            draw();
+            return;
+        }
+        
+        bird.velocity += bird.gravity;
+        bird.y += bird.velocity;
+        
+        if (bird.y + bird.height > canvas.height || bird.y < 0) {
+            endGame();
+            return;
+        }
+        
+        pipes.forEach(pipe => {
+            pipe.x -= 3;
+            
+            if (!pipe.scored && pipe.x + pipeWidth < bird.x) {
+                score++;
+                pipe.scored = true;
+                document.getElementById('flappy-score').textContent = score;
+                SoundSystem.playSuccess();
+            }
+            
+            if (bird.x + bird.width > pipe.x && bird.x < pipe.x + pipeWidth) {
+                if (bird.y < pipe.top || bird.y + bird.height > pipe.bottom) {
+                    endGame();
+                }
+            }
+        });
+        
+        pipes = pipes.filter(p => p.x > -pipeWidth);
+        
+        if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+            createPipe();
+        }
+        
+        draw();
+    }
+    
+    function endGame() {
+        gameActive = false;
+        SoundSystem.playFailure();
+        
+        if (score > bestScore) {
+            localStorage.setItem('flappyBest', score);
+            document.getElementById('flappy-best').textContent = score;
+        }
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '48px VT323';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+    }
+    
+    setInterval(update, 1000 / 60);
+}
+
+// 48. Color Memory Test
+function initColorMemoryTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Memory Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="color-mem-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="color-mem-score">0</span>
+            </div>
+        </div>
+        <div id="color-mem-display" style="display: grid; grid-template-columns: repeat(3, 150px); gap: 10px; justify-content: center; margin: 40px auto;"></div>
+        <div id="color-mem-message" style="text-align: center; color: var(--text-accent); font-size: 28px; margin-top: 20px;">
+            Memorize the colors! Click to start
+        </div>
+    `;
+    
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff8800', '#8800ff', '#00ff88'];
+    let level = 1;
+    let score = 0;
+    let sequence = [];
+    let playerSequence = [];
+    let gameStarted = false;
+    
+    const display = document.getElementById('color-mem-display');
+    
+    for (let i = 0; i < 9; i++) {
+        const box = document.createElement('div');
+        box.style.width = '150px';
+        box.style.height = '150px';
+        box.style.backgroundColor = '#333';
+        box.style.border = '4px solid var(--border-primary)';
+        box.style.cursor = 'pointer';
+        box.dataset.index = i;
+        display.appendChild(box);
+        
+        box.onclick = () => {
+            if (!gameStarted) {
+                gameStarted = true;
+                startLevel();
+            } else {
+                handleClick(i);
+            }
+        };
+    }
+    
+    function startLevel() {
+        document.getElementById('color-mem-message').textContent = 'Watch carefully...';
+        playerSequence = [];
+        
+        sequence = [];
+        for (let i = 0; i < level + 2; i++) {
+            sequence.push({
+                box: Math.floor(Math.random() * 9),
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
+        
+        const boxes = display.children;
+        let index = 0;
+        
+        const showNext = () => {
+            if (index < sequence.length) {
+                const item = sequence[index];
+                boxes[item.box].style.backgroundColor = item.color;
+                
+                setTimeout(() => {
+                    boxes[item.box].style.backgroundColor = '#333';
+                    index++;
+                    setTimeout(showNext, 300);
+                }, 800);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('color-mem-message').textContent = 'Repeat the sequence!';
+                }, 500);
+            }
+        };
+        
+        showNext();
+    }
+    
+    function handleClick(boxIndex) {
+        if (playerSequence.length >= sequence.length) return;
+        
+        const currentStep = playerSequence.length;
+        const expected = sequence[currentStep];
+        
+        const boxes = display.children;
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        boxes[boxIndex].style.backgroundColor = randomColor;
+        setTimeout(() => {
+            boxes[boxIndex].style.backgroundColor = '#333';
+        }, 200);
+        
+        playerSequence.push({ box: boxIndex, color: randomColor });
+        
+        if (boxIndex !== expected.box) {
+            document.getElementById('color-mem-message').textContent = `Game Over! Final Level: ${level}`;
+            SoundSystem.playFailure();
+            gameStarted = false;
+            return;
+        }
+        
+        if (playerSequence.length === sequence.length) {
+            let allCorrect = true;
+            for (let i = 0; i < sequence.length; i++) {
+                if (playerSequence[i].box !== sequence[i].box) {
+                    allCorrect = false;
+                    break;
+                }
+            }
+            
+            if (allCorrect) {
+                score += level * 10;
+                level++;
+                document.getElementById('color-mem-level').textContent = level;
+                document.getElementById('color-mem-score').textContent = score;
+                document.getElementById('color-mem-message').textContent = 'Correct! Next level...';
+                SoundSystem.playSuccess();
+                setTimeout(startLevel, 1500);
+            } else {
+                document.getElementById('color-mem-message').textContent = `Game Over! Final Level: ${level}`;
+                SoundSystem.playFailure();
+                gameStarted = false;
+            }
+        }
+    }
+}
+
+// 49. Word Association Game
+function initWordAssociation() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Word Association</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="word-assoc-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="word-assoc-time">60</span>
+            </div>
+        </div>
+        <div id="word-assoc-word" class="test-area" style="font-size: 64px; color: var(--text-accent);">
+            Click to Start
+        </div>
+        <div id="word-assoc-options" class="answer-options"></div>
+    `;
+    
+    const wordPairs = [
+        { word: 'HOT', matches: ['COLD', 'FIRE', 'SUN'], wrong: ['WATER', 'ICE', 'MOON'] },
+        { word: 'DAY', matches: ['NIGHT', 'SUN', 'LIGHT'], wrong: ['DARK', 'STARS', 'MOON'] },
+        { word: 'CAT', matches: ['DOG', 'MEOW', 'PET'], wrong: ['BIRD', 'FISH', 'TREE'] },
+        { word: 'HAPPY', matches: ['SAD', 'JOY', 'SMILE'], wrong: ['ANGRY', 'FROWN', 'CRY'] },
+        { word: 'UP', matches: ['DOWN', 'SKY', 'HIGH'], wrong: ['LEFT', 'RIGHT', 'LOW'] },
+        { word: 'FAST', matches: ['SLOW', 'SPEED', 'QUICK'], wrong: ['WALK', 'STOP', 'GO'] },
+        { word: 'BIG', matches: ['SMALL', 'LARGE', 'HUGE'], wrong: ['TINY', 'MINI', 'SHORT'] },
+        { word: 'LOVE', matches: ['HATE', 'HEART', 'LIKE'], wrong: ['MIND', 'BRAIN', 'THINK'] },
+        { word: 'LIGHT', matches: ['DARK', 'BRIGHT', 'LAMP'], wrong: ['HEAVY', 'WEIGHT', 'LOAD'] },
+        { word: 'KING', matches: ['QUEEN', 'CROWN', 'RULER'], wrong: ['KNIGHT', 'PAWN', 'CHESS'] }
+    ];
+    
+    let score = 0;
+    let timeLeft = 60;
+    let gameStarted = false;
+    let currentWord = null;
+    
+    function showWord() {
+        if (timeLeft <= 0) {
+            document.getElementById('word-assoc-word').textContent = `Game Over! Final Score: ${score}`;
+            document.getElementById('word-assoc-options').innerHTML = '';
+            return;
+        }
+        
+        currentWord = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+        document.getElementById('word-assoc-word').textContent = currentWord.word;
+        
+        const correct = currentWord.matches[Math.floor(Math.random() * currentWord.matches.length)];
+        const wrong = [...currentWord.wrong].sort(() => Math.random() - 0.5).slice(0, 3);
+        const options = [correct, ...wrong].sort(() => Math.random() - 0.5);
+        
+        const optionsDiv = document.getElementById('word-assoc-options');
+        optionsDiv.innerHTML = '';
+        
+        options.forEach((option, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'answer-option';
+            btn.textContent = option;
+            btn.style.animation = `slideIn 0.3s ease-out ${i * 0.1}s both`;
+            btn.onclick = () => checkAnswer(option, correct);
+            optionsDiv.appendChild(btn);
+        });
+    }
+    
+    function checkAnswer(selected, correct) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === correct) {
+            score++;
+            document.getElementById('word-assoc-score').textContent = score;
+            SoundSystem.playSuccess();
+            options.forEach(opt => {
+                if (opt.textContent === correct) {
+                    opt.classList.add('correct');
+                    VisualEffects.pulseElement(opt);
+                }
+            });
+        } else {
+            SoundSystem.playFailure();
+            options.forEach(opt => {
+                if (opt.textContent === selected) opt.classList.add('incorrect');
+                if (opt.textContent === correct) opt.classList.add('correct');
+            });
+        }
+        
+        setTimeout(showWord, 1000);
+    }
+    
+    document.getElementById('word-assoc-word').onclick = () => {
+        if (!gameStarted) {
+            gameStarted = true;
+            showWord();
+            
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('word-assoc-time').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                }
+            }, 1000);
+        }
+    };
+}
+
+// 50. Maze Navigator
+function initMazeNavigator() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Maze Navigator</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="maze-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="maze-moves">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="maze-canvas" width="500" height="500"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Use Arrow Keys to Navigate. Reach the green goal!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('maze-canvas');
+    const ctx = canvas.getContext('2d');
+    const cellSize = 50;
+    const gridSize = 10;
+    
+    let player = { x: 0, y: 0 };
+    let goal = { x: 9, y: 9 };
+    let moves = 0;
+    let level = 1;
+    let maze = [];
+    
+    function generateMaze() {
+        maze = [];
+        for (let y = 0; y < gridSize; y++) {
+            maze[y] = [];
+            for (let x = 0; x < gridSize; x++) {
+                if (Math.random() < 0.25 && !(x === 0 && y === 0) && !(x === 9 && y === 9)) {
+                    maze[y][x] = 1;
+                } else {
+                    maze[y][x] = 0;
+                }
+            }
+        }
+        maze[0][0] = 0;
+        maze[9][9] = 0;
+        for (let i = 0; i < 10; i++) {
+            maze[i][i] = 0;
+        }
+    }
+    
+    function drawMaze() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                if (maze[y][x] === 1) {
+                    ctx.fillStyle = '#666';
+                } else {
+                    ctx.fillStyle = '#222';
+                }
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize - 2, cellSize - 2);
+            }
+        }
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(goal.x * cellSize, goal.y * cellSize, cellSize - 2, cellSize - 2);
+        
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(player.x * cellSize + cellSize / 2, player.y * cellSize + cellSize / 2, cellSize / 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    function movePlayer(dx, dy) {
+        const newX = player.x + dx;
+        const newY = player.y + dy;
+        
+        if (newX >= 0 && newX < gridSize && newY >= 0 && newY < gridSize && maze[newY][newX] === 0) {
+            player.x = newX;
+            player.y = newY;
+            moves++;
+            document.getElementById('maze-moves').textContent = moves;
+            SoundSystem.playClick();
+            
+            if (player.x === goal.x && player.y === goal.y) {
+                SoundSystem.playSuccess();
+                SoundSystem.playPowerUp();
+                level++;
+                document.getElementById('maze-level').textContent = level;
+                player = { x: 0, y: 0 };
+                moves = 0;
+                document.getElementById('maze-moves').textContent = moves;
+                generateMaze();
+            }
+            
+            drawMaze();
+        } else {
+            SoundSystem.playFailure();
+        }
+    }
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); movePlayer(0, -1); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); movePlayer(0, 1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); movePlayer(-1, 0); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); movePlayer(1, 0); }
+    });
+    
+    generateMaze();
+    drawMaze();
 }
