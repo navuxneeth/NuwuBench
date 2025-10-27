@@ -4169,6 +4169,10 @@ function initSpaceInvaders() {
         <h2 class="game-title">Space Invaders Mini</h2>
         <div class="game-stats">
             <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="invaders-level">1</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Score:</span>
                 <span class="stat-value" id="invaders-score">0</span>
             </div>
@@ -4193,22 +4197,28 @@ function initSpaceInvaders() {
     let invaders = [];
     let score = 0;
     let lives = 3;
+    let level = 1;
     let gameActive = true;
+    let invaderDirection = 1;
     
-    // Create invaders
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 8; col++) {
-            invaders.push({
-                x: col * 60 + 50,
-                y: row * 40 + 30,
-                width: 40,
-                height: 30,
-                alive: true
-            });
+    function createInvaders() {
+        invaders = [];
+        const rows = Math.min(3 + Math.floor((level - 1) / 2), 5);
+        const cols = 8;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                invaders.push({
+                    x: col * 60 + 50,
+                    y: row * 40 + 30,
+                    width: 40,
+                    height: 30,
+                    alive: true
+                });
+            }
         }
     }
     
-    let invaderDirection = 1;
+    createInvaders();
     
     const keys = {};
     document.addEventListener('keydown', (e) => {
@@ -4283,13 +4293,14 @@ function initSpaceInvaders() {
         
         // Check win/loss
         if (invaders.every(inv => !inv.alive)) {
-            gameActive = false;
+            level++;
+            document.getElementById('invaders-level').textContent = level;
             SoundSystem.playSuccess();
             SoundSystem.playPowerUp();
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '48px VT323';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+            bullets = [];
+            player.x = 280;
+            invaderDirection = 1 + (level - 1) * 0.3;
+            createInvaders();
         }
         
         if (lives <= 0) {
@@ -4620,6 +4631,10 @@ function initBreakout() {
         <h2 class="game-title">Breakout Game</h2>
         <div class="game-stats">
             <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="breakout-level">1</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Score:</span>
                 <span class="stat-value" id="breakout-score">0</span>
             </div>
@@ -4644,6 +4659,7 @@ function initBreakout() {
     let bricks = [];
     let score = 0;
     let lives = 3;
+    let level = 1;
     let gameActive = false;
     
     const brickRows = 5;
@@ -4781,13 +4797,25 @@ function initBreakout() {
         }
         
         if (allBricksGone) {
-            gameActive = false;
+            level++;
+            document.getElementById('breakout-level').textContent = level;
             SoundSystem.playSuccess();
             SoundSystem.playPowerUp();
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '48px VT323';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+            
+            // Reset bricks
+            for (let r = 0; r < brickRows; r++) {
+                for (let c = 0; c < brickCols; c++) {
+                    bricks[r][c].status = 1;
+                }
+            }
+            
+            // Increase ball speed
+            const speedMultiplier = 1 + (level - 1) * 0.15;
+            ball.dx = 3 * speedMultiplier * (ball.dx > 0 ? 1 : -1);
+            ball.dy = -3 * speedMultiplier;
+            ball.x = 300;
+            ball.y = 400;
+            gameActive = false;
         }
         
         draw();
