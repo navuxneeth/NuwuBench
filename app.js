@@ -5208,21 +5208,57 @@ function initMazeNavigator() {
     let maze = [];
     
     function generateMaze() {
+        // Generate maze using recursive backtracking to ensure solvability
         maze = [];
         for (let y = 0; y < gridSize; y++) {
             maze[y] = [];
             for (let x = 0; x < gridSize; x++) {
-                if (Math.random() < 0.25 && !(x === 0 && y === 0) && !(x === 9 && y === 9)) {
-                    maze[y][x] = 1;
-                } else {
+                maze[y][x] = 1; // Start with all walls
+            }
+        }
+        
+        // Create a path from start to goal using depth-first search
+        const visited = new Set();
+        const stack = [[0, 0]];
+        visited.add('0,0');
+        maze[0][0] = 0;
+        
+        while (stack.length > 0) {
+            const [cx, cy] = stack[stack.length - 1];
+            
+            // Get unvisited neighbors
+            const neighbors = [];
+            const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for (const [dx, dy] of dirs) {
+                const nx = cx + dx;
+                const ny = cy + dy;
+                if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && !visited.has(`${nx},${ny}`)) {
+                    neighbors.push([nx, ny]);
+                }
+            }
+            
+            if (neighbors.length > 0) {
+                // Choose random unvisited neighbor
+                const [nx, ny] = neighbors[Math.floor(Math.random() * neighbors.length)];
+                maze[ny][nx] = 0;
+                visited.add(`${nx},${ny}`);
+                stack.push([nx, ny]);
+            } else {
+                stack.pop();
+            }
+        }
+        
+        // Ensure goal is reachable
+        maze[goal.y][goal.x] = 0;
+        
+        // Add some random open paths based on difficulty
+        const wallDensity = Math.min(0.15, level * 0.02);
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                if (Math.random() < wallDensity && maze[y][x] === 1) {
                     maze[y][x] = 0;
                 }
             }
-        }
-        maze[0][0] = 0;
-        maze[9][9] = 0;
-        for (let i = 0; i < 10; i++) {
-            maze[i][i] = 0;
         }
     }
     
