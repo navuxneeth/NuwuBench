@@ -4200,6 +4200,7 @@ function initSpaceInvaders() {
     let level = 1;
     let gameActive = true;
     let invaderDirection = 1;
+    let invaderSpeed = 2;
     
     function createInvaders() {
         invaders = [];
@@ -4253,7 +4254,7 @@ function initSpaceInvaders() {
         const aliveInvaders = invaders.filter(inv => inv.alive);
         
         aliveInvaders.forEach(inv => {
-            inv.x += invaderDirection * 2;
+            inv.x += invaderDirection * invaderSpeed;
             if (inv.x <= 0 || inv.x >= canvas.width - inv.width) {
                 shouldMoveDown = true;
             }
@@ -4294,12 +4295,13 @@ function initSpaceInvaders() {
         // Check win/loss
         if (invaders.every(inv => !inv.alive)) {
             level++;
+            invaderSpeed = 2 + (level - 1) * 0.3;
             document.getElementById('invaders-level').textContent = level;
             SoundSystem.playSuccess();
             SoundSystem.playPowerUp();
             bullets = [];
             player.x = 280;
-            invaderDirection = 1 + (level - 1) * 0.3;
+            invaderDirection = 1;
             createInvaders();
         }
         
@@ -4815,7 +4817,8 @@ function initBreakout() {
             ball.dy = -3 * speedMultiplier;
             ball.x = 300;
             ball.y = 400;
-            gameActive = false;
+            paddle.x = 250;
+            gameActive = false;  // Wait for player to click to start next level
         }
         
         draw();
