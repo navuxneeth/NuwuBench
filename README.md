@@ -1,6 +1,6 @@
 # NuwuBench
 
-A retro-styled human benchmark testing website featuring 50 interactive games to test various cognitive and motor skills.
+A retro-styled human benchmark testing website featuring 53 interactive games to test various cognitive and motor skills.
 
 ## Features
 
@@ -8,7 +8,7 @@ A retro-styled human benchmark testing website featuring 50 interactive games to
 - **Theme Switcher**: Toggle between dark mode (default) and light mode
 - **Auto-Start Games**: Games begin as soon as you start interacting - no START buttons needed!
 - **Restart Functionality**: Easily restart any game with the "Play Again" button
-- **50 Unique Tests**: Comprehensive collection of human capability benchmarks
+- **53 Unique Tests**: Comprehensive collection of human capability benchmarks
 - **Sound Effects**: Interactive audio feedback using Web Audio API
 - **Animations & Effects**: Confetti, shake effects, smooth transitions, and particle effects
 - **Fully Customizable**: Adjustable difficulty, duration, and settings for all tests
@@ -165,7 +165,16 @@ Advanced color sequence memory game. Memorize and repeat increasingly complex co
 Match related words quickly. Test your vocabulary and cognitive connections under time pressure.
 
 ### 50. Maze Navigator 🎮
-Navigate through randomly generated mazes using arrow keys. Reach the goal to advance levels!
+Navigate through randomly generated solvable mazes using arrow keys. Reach the goal to advance to progressively harder levels!
+
+### 51. Tower of Hanoi 🧩
+Classic puzzle game. Move all disks from the left tower to the right tower. Smaller disks must always be on top of larger disks. Progressive difficulty with more disks!
+
+### 52. Reaction Chain ⚡
+Click moving circles to build your reaction chain! Miss one and your chain breaks. Circles get smaller and faster as you level up!
+
+### 53. Memory Pairs 🎴
+Match pairs of emoji cards. Grid size increases with each level. Test your visual memory and pattern recognition!
 
 ## How to Use
 

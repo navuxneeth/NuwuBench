@@ -264,6 +264,9 @@ function loadGame(gameName) {
         case 'color-memory-test': initColorMemoryTest(); break;
         case 'word-association': initWordAssociation(); break;
         case 'maze-navigator': initMazeNavigator(); break;
+        case 'tower-of-hanoi': initTowerOfHanoi(); break;
+        case 'reaction-chain': initReactionChain(); break;
+        case 'memory-pairs': initMemoryPairs(); break;
     }
 }
 
@@ -4166,6 +4169,10 @@ function initSpaceInvaders() {
         <h2 class="game-title">Space Invaders Mini</h2>
         <div class="game-stats">
             <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="invaders-level">1</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Score:</span>
                 <span class="stat-value" id="invaders-score">0</span>
             </div>
@@ -4190,22 +4197,29 @@ function initSpaceInvaders() {
     let invaders = [];
     let score = 0;
     let lives = 3;
+    let level = 1;
     let gameActive = true;
+    let invaderDirection = 1;
+    let invaderSpeed = 2;
     
-    // Create invaders
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 8; col++) {
-            invaders.push({
-                x: col * 60 + 50,
-                y: row * 40 + 30,
-                width: 40,
-                height: 30,
-                alive: true
-            });
+    function createInvaders() {
+        invaders = [];
+        const rows = Math.min(3 + Math.floor((level - 1) / 2), 5);
+        const cols = 8;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                invaders.push({
+                    x: col * 60 + 50,
+                    y: row * 40 + 30,
+                    width: 40,
+                    height: 30,
+                    alive: true
+                });
+            }
         }
     }
     
-    let invaderDirection = 1;
+    createInvaders();
     
     const keys = {};
     document.addEventListener('keydown', (e) => {
@@ -4240,7 +4254,7 @@ function initSpaceInvaders() {
         const aliveInvaders = invaders.filter(inv => inv.alive);
         
         aliveInvaders.forEach(inv => {
-            inv.x += invaderDirection * 2;
+            inv.x += invaderDirection * invaderSpeed;
             if (inv.x <= 0 || inv.x >= canvas.width - inv.width) {
                 shouldMoveDown = true;
             }
@@ -4280,13 +4294,15 @@ function initSpaceInvaders() {
         
         // Check win/loss
         if (invaders.every(inv => !inv.alive)) {
-            gameActive = false;
+            level++;
+            invaderSpeed = 2 + (level - 1) * 0.3;
+            document.getElementById('invaders-level').textContent = level;
             SoundSystem.playSuccess();
             SoundSystem.playPowerUp();
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '48px VT323';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+            bullets = [];
+            player.x = 280;
+            invaderDirection = 1;
+            createInvaders();
         }
         
         if (lives <= 0) {
@@ -4617,6 +4633,10 @@ function initBreakout() {
         <h2 class="game-title">Breakout Game</h2>
         <div class="game-stats">
             <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="breakout-level">1</span>
+            </div>
+            <div class="stat-item">
                 <span class="stat-label">Score:</span>
                 <span class="stat-value" id="breakout-score">0</span>
             </div>
@@ -4641,6 +4661,7 @@ function initBreakout() {
     let bricks = [];
     let score = 0;
     let lives = 3;
+    let level = 1;
     let gameActive = false;
     
     const brickRows = 5;
@@ -4778,13 +4799,26 @@ function initBreakout() {
         }
         
         if (allBricksGone) {
-            gameActive = false;
+            level++;
+            document.getElementById('breakout-level').textContent = level;
             SoundSystem.playSuccess();
             SoundSystem.playPowerUp();
-            ctx.fillStyle = '#00ff00';
-            ctx.font = '48px VT323';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU WIN!', canvas.width / 2, canvas.height / 2);
+            
+            // Reset bricks
+            for (let r = 0; r < brickRows; r++) {
+                for (let c = 0; c < brickCols; c++) {
+                    bricks[r][c].status = 1;
+                }
+            }
+            
+            // Increase ball speed
+            const speedMultiplier = 1 + (level - 1) * 0.15;
+            ball.dx = 3 * speedMultiplier * (ball.dx > 0 ? 1 : -1);
+            ball.dy = -3 * speedMultiplier;
+            ball.x = 300;
+            ball.y = 400;
+            paddle.x = 250;
+            gameActive = false;  // Wait for player to click to start next level
         }
         
         draw();
@@ -5208,21 +5242,57 @@ function initMazeNavigator() {
     let maze = [];
     
     function generateMaze() {
+        // Generate maze using recursive backtracking to ensure solvability
         maze = [];
         for (let y = 0; y < gridSize; y++) {
             maze[y] = [];
             for (let x = 0; x < gridSize; x++) {
-                if (Math.random() < 0.25 && !(x === 0 && y === 0) && !(x === 9 && y === 9)) {
-                    maze[y][x] = 1;
-                } else {
+                maze[y][x] = 1; // Start with all walls
+            }
+        }
+        
+        // Create a path from start to goal using depth-first search
+        const visited = new Set();
+        const stack = [[0, 0]];
+        visited.add('0,0');
+        maze[0][0] = 0;
+        
+        while (stack.length > 0) {
+            const [cx, cy] = stack[stack.length - 1];
+            
+            // Get unvisited neighbors
+            const neighbors = [];
+            const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for (const [dx, dy] of dirs) {
+                const nx = cx + dx;
+                const ny = cy + dy;
+                if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && !visited.has(`${nx},${ny}`)) {
+                    neighbors.push([nx, ny]);
+                }
+            }
+            
+            if (neighbors.length > 0) {
+                // Choose random unvisited neighbor
+                const [nx, ny] = neighbors[Math.floor(Math.random() * neighbors.length)];
+                maze[ny][nx] = 0;
+                visited.add(`${nx},${ny}`);
+                stack.push([nx, ny]);
+            } else {
+                stack.pop();
+            }
+        }
+        
+        // Ensure goal is reachable
+        maze[goal.y][goal.x] = 0;
+        
+        // Add some random open paths based on difficulty
+        const wallDensity = Math.min(0.15, level * 0.02);
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                if (Math.random() < wallDensity && maze[y][x] === 1) {
                     maze[y][x] = 0;
                 }
             }
-        }
-        maze[0][0] = 0;
-        maze[9][9] = 0;
-        for (let i = 0; i < 10; i++) {
-            maze[i][i] = 0;
         }
     }
     
@@ -5287,4 +5357,487 @@ function initMazeNavigator() {
     
     generateMaze();
     drawMaze();
+}
+
+// 51. Tower of Hanoi
+function initTowerOfHanoi() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Tower of Hanoi</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="hanoi-level">3</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="hanoi-moves">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Min Moves:</span>
+                <span class="stat-value" id="hanoi-min">7</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="hanoi-canvas" width="600" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click on a tower to select, click another to move. Move all disks to the right tower!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('hanoi-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let level = 3;
+    let moves = 0;
+    let selectedTower = null;
+    let towers = [[], [], []];
+    
+    function initTowers() {
+        towers = [[], [], []];
+        for (let i = level; i > 0; i--) {
+            towers[0].push(i);
+        }
+        moves = 0;
+        selectedTower = null;
+        document.getElementById('hanoi-moves').textContent = moves;
+        document.getElementById('hanoi-level').textContent = level;
+        document.getElementById('hanoi-min').textContent = Math.pow(2, level) - 1;
+        drawTowers();
+    }
+    
+    function drawTowers() {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const towerX = [100, 300, 500];
+        const baseY = 350;
+        
+        // Draw tower poles
+        ctx.fillStyle = '#666';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(towerX[i] - 5, 150, 10, 200);
+            ctx.fillRect(towerX[i] - 80, baseY, 160, 10);
+        }
+        
+        // Draw disks
+        const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#9400d3', '#ff1493'];
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < towers[i].length; j++) {
+                const diskSize = towers[i][j];
+                const width = diskSize * 20 + 20;
+                const height = 20;
+                const x = towerX[i] - width / 2;
+                const y = baseY - (j + 1) * 25;
+                
+                ctx.fillStyle = colors[diskSize - 1];
+                ctx.fillRect(x, y, width, height);
+                ctx.strokeStyle = '#000';
+                ctx.strokeRect(x, y, width, height);
+                
+                if (i === selectedTower) {
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
+                    ctx.lineWidth = 1;
+                }
+            }
+        }
+    }
+    
+    function getTowerFromX(x) {
+        if (x < 200) return 0;
+        if (x < 400) return 1;
+        return 2;
+    }
+    
+    function canMove(from, to) {
+        if (towers[from].length === 0) return false;
+        if (towers[to].length === 0) return true;
+        return towers[from][towers[from].length - 1] < towers[to][towers[to].length - 1];
+    }
+    
+    function checkWin() {
+        if (towers[2].length === level) {
+            const minMoves = Math.pow(2, level) - 1;
+            const stars = moves <= minMoves ? '⭐⭐⭐' : moves <= minMoves * 1.5 ? '⭐⭐' : '⭐';
+            
+            SoundSystem.playSuccess();
+            SoundSystem.playPowerUp();
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '48px VT323';
+            ctx.textAlign = 'center';
+            ctx.fillText('LEVEL COMPLETE!', canvas.width / 2, canvas.height / 2 - 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '32px VT323';
+            ctx.fillText(`${stars} Moves: ${moves}/${minMoves}`, canvas.width / 2, canvas.height / 2 + 10);
+            
+            level++;
+            setTimeout(initTowers, 2000);
+        }
+    }
+    
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const tower = getTowerFromX(x);
+        
+        if (selectedTower === null) {
+            if (towers[tower].length > 0) {
+                selectedTower = tower;
+                SoundSystem.playClick();
+                drawTowers();
+            }
+        } else {
+            if (tower === selectedTower) {
+                selectedTower = null;
+                drawTowers();
+            } else if (canMove(selectedTower, tower)) {
+                const disk = towers[selectedTower].pop();
+                towers[tower].push(disk);
+                moves++;
+                document.getElementById('hanoi-moves').textContent = moves;
+                selectedTower = null;
+                SoundSystem.playSuccess();
+                drawTowers();
+                checkWin();
+            } else {
+                SoundSystem.playFailure();
+                selectedTower = null;
+                drawTowers();
+            }
+        }
+    };
+    
+    initTowers();
+}
+
+// 52. Reaction Chain
+function initReactionChain() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Reaction Chain</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="chain-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="chain-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Chain:</span>
+                <span class="stat-value" id="chain-streak">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="chain-canvas" width="600" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click the circles as fast as you can! Build your chain!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('chain-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let level = 1;
+    let score = 0;
+    let chain = 0;
+    let circles = [];
+    let gameActive = false;
+    let timeLimit = 30;
+    let timeLeft = timeLimit;
+    
+    class Circle {
+        constructor() {
+            this.radius = 30 - level * 2;
+            this.x = this.radius + Math.random() * (canvas.width - this.radius * 2);
+            this.y = this.radius + Math.random() * (canvas.height - this.radius * 2);
+            this.speedX = (Math.random() - 0.5) * (2 + level * 0.5);
+            this.speedY = (Math.random() - 0.5) * (2 + level * 0.5);
+            this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+            this.lifetime = 3000 - level * 100;
+            this.createdAt = Date.now();
+        }
+        
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            
+            if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                this.speedX *= -1;
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+            }
+            if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                this.speedY *= -1;
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+            }
+        }
+        
+        draw() {
+            const age = Date.now() - this.createdAt;
+            const opacity = 1 - (age / this.lifetime);
+            
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = opacity;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        isExpired() {
+            return Date.now() - this.createdAt > this.lifetime;
+        }
+        
+        contains(x, y) {
+            const dx = x - this.x;
+            const dy = y - this.y;
+            return dx * dx + dy * dy <= this.radius * this.radius;
+        }
+    }
+    
+    function spawnCircle() {
+        if (gameActive && circles.length < 5 + level) {
+            circles.push(new Circle());
+        }
+    }
+    
+    function update() {
+        if (!gameActive) return;
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        circles = circles.filter(c => !c.isExpired());
+        
+        circles.forEach(c => {
+            c.update();
+            c.draw();
+        });
+        
+        // Check for expired circles (missed)
+        const beforeCount = circles.length;
+        circles = circles.filter(c => {
+            if (c.isExpired()) {
+                chain = 0;
+                document.getElementById('chain-streak').textContent = chain;
+                SoundSystem.playFailure();
+                return false;
+            }
+            return true;
+        });
+        
+        if (Math.random() < 0.02 * level) {
+            spawnCircle();
+        }
+    }
+    
+    canvas.onclick = (e) => {
+        if (!gameActive) {
+            gameActive = true;
+            startGame();
+            return;
+        }
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        for (let i = circles.length - 1; i >= 0; i--) {
+            if (circles[i].contains(x, y)) {
+                score += (1 + chain) * level;
+                chain++;
+                document.getElementById('chain-score').textContent = score;
+                document.getElementById('chain-streak').textContent = chain;
+                SoundSystem.playSuccess();
+                circles.splice(i, 1);
+                
+                // Level up every 50 points
+                if (score >= level * 50) {
+                    level++;
+                    document.getElementById('chain-level').textContent = level;
+                    SoundSystem.playPowerUp();
+                }
+                break;
+            }
+        }
+    };
+    
+    function startGame() {
+        const timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                clearInterval(gameLoop);
+                gameActive = false;
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00ff00';
+                ctx.font = '48px VT323';
+                ctx.textAlign = 'center';
+                ctx.fillText('TIME UP!', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '32px VT323';
+                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
+                ctx.fillText(`Level Reached: ${level}`, canvas.width / 2, canvas.height / 2 + 70);
+            }
+        }, 1000);
+        
+        spawnCircle();
+        spawnCircle();
+    }
+    
+    const gameLoop = setInterval(update, 1000 / 60);
+    
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = '32px VT323';
+    ctx.textAlign = 'center';
+    ctx.fillText('Click to Start!', canvas.width / 2, canvas.height / 2);
+}
+
+// 53. Memory Pairs
+function initMemoryPairs() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Memory Pairs</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="pairs-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Pairs Found:</span>
+                <span class="stat-value" id="pairs-found">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="pairs-moves">0</span>
+            </div>
+        </div>
+        <div id="pairs-grid" style="display: grid; gap: 10px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const symbols = ['🎮', '🎲', '🎯', '🎨', '🎭', '🎪', '🎸', '🎹', '🎺', '🎻', '🏀', '⚽', '🏈', '⚾', '🎾', '🏐', '🏓', '🏸', '🏒', '🏑', '🥊', '🥋', '🎿', '⛷️'];
+    
+    let level = 1;
+    let gridSize = 4; // 4x4 for level 1
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let canFlip = true;
+    
+    function initLevel() {
+        const pairCount = (gridSize * gridSize) / 2;
+        const selectedSymbols = symbols.slice(0, pairCount);
+        const cardSymbols = [...selectedSymbols, ...selectedSymbols];
+        cardSymbols.sort(() => Math.random() - 0.5);
+        
+        const grid = document.getElementById('pairs-grid');
+        grid.style.gridTemplateColumns = `repeat(${gridSize}, 80px)`;
+        grid.innerHTML = '';
+        
+        cards = [];
+        flippedCards = [];
+        matchedPairs = 0;
+        moves = 0;
+        canFlip = true;
+        
+        document.getElementById('pairs-level').textContent = level;
+        document.getElementById('pairs-found').textContent = matchedPairs;
+        document.getElementById('pairs-moves').textContent = moves;
+        
+        cardSymbols.forEach((symbol, index) => {
+            const card = document.createElement('div');
+            card.style.width = '80px';
+            card.style.height = '80px';
+            card.style.backgroundColor = 'var(--bg-secondary)';
+            card.style.border = '3px solid var(--border-primary)';
+            card.style.borderRadius = '8px';
+            card.style.display = 'flex';
+            card.style.alignItems = 'center';
+            card.style.justifyContent = 'center';
+            card.style.fontSize = '48px';
+            card.style.cursor = 'pointer';
+            card.style.transition = 'transform 0.3s';
+            card.dataset.index = index;
+            card.dataset.symbol = symbol;
+            card.dataset.flipped = 'false';
+            card.dataset.matched = 'false';
+            card.textContent = '?';
+            
+            card.onclick = () => flipCard(card);
+            grid.appendChild(card);
+            cards.push(card);
+        });
+    }
+    
+    function flipCard(card) {
+        if (!canFlip || card.dataset.flipped === 'true' || card.dataset.matched === 'true') {
+            return;
+        }
+        
+        card.dataset.flipped = 'true';
+        card.textContent = card.dataset.symbol;
+        card.style.backgroundColor = 'var(--bg-tertiary)';
+        card.style.transform = 'rotateY(180deg)';
+        flippedCards.push(card);
+        SoundSystem.playClick();
+        
+        if (flippedCards.length === 2) {
+            moves++;
+            document.getElementById('pairs-moves').textContent = moves;
+            canFlip = false;
+            
+            setTimeout(() => {
+                if (flippedCards[0].dataset.symbol === flippedCards[1].dataset.symbol) {
+                    // Match found
+                    flippedCards.forEach(c => {
+                        c.dataset.matched = 'true';
+                        c.style.backgroundColor = 'var(--color-success)';
+                    });
+                    matchedPairs++;
+                    document.getElementById('pairs-found').textContent = matchedPairs;
+                    SoundSystem.playSuccess();
+                    
+                    if (matchedPairs === (gridSize * gridSize) / 2) {
+                        // Level complete
+                        setTimeout(() => {
+                            level++;
+                            gridSize = Math.min(6, 4 + Math.floor((level - 1) / 2));
+                            SoundSystem.playPowerUp();
+                            initLevel();
+                        }, 1000);
+                    }
+                } else {
+                    // No match
+                    flippedCards.forEach(c => {
+                        c.dataset.flipped = 'false';
+                        c.textContent = '?';
+                        c.style.backgroundColor = 'var(--bg-secondary)';
+                        c.style.transform = 'rotateY(0deg)';
+                    });
+                    SoundSystem.playFailure();
+                }
+                
+                flippedCards = [];
+                canFlip = true;
+            }, 1000);
+        }
+    }
+    
+    initLevel();
 }
