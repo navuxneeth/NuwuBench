@@ -199,12 +199,33 @@
                     <h3>Runner Game</h3>
                     <p>Endless runner challenge</p>
                 </div>
+                <div class="game-card" onclick="loadGame('breakout')">
+                    <h3>Breakout Game</h3>
+                    <p>Classic brick breaker</p>
+                </div>
+                <div class="game-card" onclick="loadGame('flappy-bird')">
+                    <h3>Flappy Bird</h3>
+                    <p>Navigate through pipes</p>
+                </div>
+                <div class="game-card" onclick="loadGame('color-memory-test')">
+                    <h3>Color Memory Test</h3>
+                    <p>Remember color sequences</p>
+                </div>
+                <div class="game-card" onclick="loadGame('word-association')">
+                    <h3>Word Association</h3>
+                    <p>Match related words</p>
+                </div>
+                <div class="game-card" onclick="loadGame('maze-navigator')">
+                    <h3>Maze Navigator</h3>
+                    <p>Find your way through mazes</p>
+                </div>
             </div>
 
             <div id="game-container" class="hidden"></div>
         </main>
 
         <footer>
+            <button class="restart-button hidden" id="restart-button" onclick="restartGame()">🔄 Play Again</button>
             <button class="back-button hidden" id="back-button" onclick="backToMenu()">← Back to Menu</button>
         </footer>
     </div>
