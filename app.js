@@ -264,6 +264,16 @@ function loadGame(gameName) {
         case 'color-memory-test': initColorMemoryTest(); break;
         case 'word-association': initWordAssociation(); break;
         case 'maze-navigator': initMazeNavigator(); break;
+        case 'balance-test': initBalanceTest(); break;
+        case 'rhythm-matcher': initRhythmMatcher(); break;
+        case 'code-debugger': initCodeDebugger(); break;
+        case 'speed-reader': initSpeedReader(); break;
+        case 'card-matching': initCardMatching(); break;
+        case 'morse-code': initMorseCode(); break;
+        case 'binary-challenge': initBinaryChallenge(); break;
+        case 'path-finder': initPathFinder(); break;
+        case 'shape-matcher': initShapeMatcher(); break;
+        case 'quick-math-facts': initQuickMathFacts(); break;
     }
 }
 
@@ -5287,4 +5297,944 @@ function initMazeNavigator() {
     
     generateMaze();
     drawMaze();
+}
+
+// 51. Balance Test
+function initBalanceTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Balance Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="balance-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Best Time:</span>
+                <span class="stat-value" id="balance-best">0s</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="balance-canvas" width="600" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Use ← → to keep the ball balanced. Click to start!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('balance-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let platform = { x: 250, y: 300, width: 100, height: 10, angle: 0 };
+    let ball = { x: 300, y: 280, radius: 15, vx: 0, vy: 0 };
+    let gameActive = false;
+    let score = 0;
+    let startTime = 0;
+    
+    const bestTime = parseInt(localStorage.getItem('balanceBest') || '0');
+    document.getElementById('balance-best').textContent = bestTime + 's';
+    
+    const keys = {};
+    document.addEventListener('keydown', (e) => { keys[e.key] = true; });
+    document.addEventListener('keyup', (e) => { keys[e.key] = false; });
+    
+    canvas.onclick = () => {
+        if (!gameActive) {
+            gameActive = true;
+            startTime = Date.now();
+            SoundSystem.playClick();
+        }
+    };
+    
+    function update() {
+        if (!gameActive) {
+            draw();
+            return;
+        }
+        
+        // Update platform angle
+        if (keys['ArrowLeft']) platform.angle = Math.max(-0.3, platform.angle - 0.02);
+        if (keys['ArrowRight']) platform.angle = Math.min(0.3, platform.angle + 0.02);
+        
+        // Ball physics
+        ball.vx += Math.sin(platform.angle) * 0.5;
+        ball.vx *= 0.98; // friction
+        ball.x += ball.vx;
+        
+        // Keep ball on platform
+        const ballOnPlatform = Math.abs(ball.x - 300) < 60 && Math.abs(ball.y - 280) < 20;
+        
+        if (!ballOnPlatform) {
+            ball.vy += 0.5;
+            ball.y += ball.vy;
+        }
+        
+        // Check if ball fell off
+        if (ball.y > canvas.height) {
+            gameActive = false;
+            const time = Math.floor((Date.now() - startTime) / 1000);
+            score = time;
+            document.getElementById('balance-score').textContent = score + 's';
+            
+            if (time > bestTime) {
+                localStorage.setItem('balanceBest', time);
+                document.getElementById('balance-best').textContent = time + 's';
+            }
+            
+            SoundSystem.playFailure();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ff0000';
+            ctx.font = '48px VT323';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAME OVER!', canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '32px VT323';
+            ctx.fillText(`You balanced for ${time} seconds!`, canvas.width / 2, canvas.height / 2 + 40);
+        } else {
+            score = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('balance-score').textContent = score + 's';
+        }
+        
+        draw();
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw platform
+        ctx.save();
+        ctx.translate(300, 300);
+        ctx.rotate(platform.angle);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(-50, -5, 100, 10);
+        ctx.restore();
+        
+        // Draw ball
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    setInterval(update, 1000 / 60);
+}
+
+// 52. Rhythm Matcher
+function initRhythmMatcher() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Rhythm Matcher</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="rhythm-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Streak:</span>
+                <span class="stat-value" id="rhythm-streak">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="rhythm-accuracy">100%</span>
+            </div>
+        </div>
+        <div id="rhythm-area" class="test-area" style="min-height: 400px;">
+            <div id="rhythm-target" style="width: 150px; height: 150px; background: var(--text-accent); border-radius: 50%; border: 5px solid var(--border-primary); display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: 0.3;">
+                🎵
+            </div>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click when the circle glows! Press SPACE or click to start
+        </div>
+    `;
+    
+    let score = 0;
+    let streak = 0;
+    let hits = 0;
+    let attempts = 0;
+    let gameActive = false;
+    let beatActive = false;
+    let beatTimeout = null;
+    
+    const target = document.getElementById('rhythm-target');
+    const area = document.getElementById('rhythm-area');
+    
+    function startBeat() {
+        if (!gameActive) return;
+        
+        const delay = 800 + Math.random() * 700;
+        beatTimeout = setTimeout(() => {
+            beatActive = true;
+            target.style.opacity = '1';
+            target.style.transform = 'scale(1.2)';
+            SoundSystem.playClick();
+            
+            setTimeout(() => {
+                if (beatActive) {
+                    beatActive = false;
+                    target.style.opacity = '0.3';
+                    target.style.transform = 'scale(1)';
+                    streak = 0;
+                    document.getElementById('rhythm-streak').textContent = streak;
+                    attempts++;
+                    updateAccuracy();
+                }
+                startBeat();
+            }, 500);
+        }, delay);
+    }
+    
+    function handleClick() {
+        if (!gameActive) {
+            gameActive = true;
+            SoundSystem.playClick();
+            startBeat();
+            return;
+        }
+        
+        attempts++;
+        if (beatActive) {
+            score += 10;
+            streak++;
+            hits++;
+            beatActive = false;
+            target.style.opacity = '0.3';
+            target.style.transform = 'scale(1)';
+            SoundSystem.playSuccess();
+            document.getElementById('rhythm-score').textContent = score;
+            document.getElementById('rhythm-streak').textContent = streak;
+        } else {
+            streak = 0;
+            document.getElementById('rhythm-streak').textContent = streak;
+            SoundSystem.playFailure();
+        }
+        updateAccuracy();
+    }
+    
+    function updateAccuracy() {
+        const accuracy = attempts > 0 ? Math.round((hits / attempts) * 100) : 100;
+        document.getElementById('rhythm-accuracy').textContent = accuracy + '%';
+    }
+    
+    area.onclick = handleClick;
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            handleClick();
+        }
+    });
+}
+
+// 53. Code Debugger
+function initCodeDebugger() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Code Debugger</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="debug-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="debug-level">1</span>
+            </div>
+        </div>
+        <div id="debug-code" class="code-editor" style="white-space: pre; font-family: 'Courier New', monospace; background: #1e1e1e; color: #d4d4d4; padding: 20px; min-height: 300px;"></div>
+        <div id="debug-options" class="answer-options"></div>
+    `;
+    
+    const buggyCode = [
+        { code: `function add(a, b) {\n  return a + b\n}`, line: 2, fix: 'Missing semicolon after return statement', correct: 'return a + b;' },
+        { code: `let x = 10;\nif (x = 5) {\n  console.log("Equal");\n}`, line: 2, fix: 'Should use == or === for comparison, not =', correct: 'if (x === 5) {' },
+        { code: `const arr = [1, 2, 3];\narr.push(4)\nconsole.log(arr);`, line: 2, fix: 'Missing semicolon after array push', correct: 'arr.push(4);' },
+        { code: `function greet(name) {\n  console.log("Hello " + name)\n}`, line: 2, fix: 'Missing semicolon after console.log', correct: 'console.log("Hello " + name);' },
+        { code: `let total = 0;\nfor (let i = 0; i < 10; i++) {\n  total += i\n}`, line: 3, fix: 'Missing semicolon after total += i', correct: 'total += i;' },
+        { code: `const obj = { name: "John" age: 30 };`, line: 1, fix: 'Missing comma between object properties', correct: '{ name: "John", age: 30 }' },
+        { code: `if (x > 5) {\n  console.log("Big")\n}\nelse {\n  console.log("Small");\n}`, line: 2, fix: 'Missing semicolon in first console.log', correct: 'console.log("Big");' },
+        { code: `const multiply = (a, b) => {\n  return a * b\n}`, line: 2, fix: 'Missing semicolon after return', correct: 'return a * b;' }
+    ];
+    
+    let currentLevel = 0;
+    let score = 0;
+    
+    function showCode() {
+        if (currentLevel >= buggyCode.length) {
+            const codeEl = document.getElementById('debug-code');
+            codeEl.textContent = `🎉 All bugs fixed! Final Score: ${score}`;
+            document.getElementById('debug-options').innerHTML = '';
+            SoundSystem.playSuccess();
+            SoundSystem.playPowerUp();
+            return;
+        }
+        
+        const bug = buggyCode[currentLevel];
+        document.getElementById('debug-code').textContent = bug.code;
+        document.getElementById('debug-level').textContent = currentLevel + 1;
+        
+        const options = [
+            bug.fix,
+            'Code is correct, no bug',
+            'Missing parenthesis',
+            'Wrong variable name'
+        ].sort(() => Math.random() - 0.5);
+        
+        const optionsDiv = document.getElementById('debug-options');
+        optionsDiv.innerHTML = '';
+        
+        options.forEach((option, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'answer-option';
+            btn.textContent = option;
+            btn.style.animation = `slideIn 0.3s ease-out ${i * 0.1}s both`;
+            btn.onclick = () => checkAnswer(option, bug.fix);
+            optionsDiv.appendChild(btn);
+        });
+    }
+    
+    function checkAnswer(selected, correct) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === correct) {
+            score += 10;
+            document.getElementById('debug-score').textContent = score;
+            SoundSystem.playSuccess();
+            options.forEach(opt => {
+                if (opt.textContent === correct) {
+                    opt.classList.add('correct');
+                }
+            });
+        } else {
+            SoundSystem.playFailure();
+            options.forEach(opt => {
+                if (opt.textContent === selected) opt.classList.add('incorrect');
+                if (opt.textContent === correct) opt.classList.add('correct');
+            });
+        }
+        
+        currentLevel++;
+        setTimeout(showCode, 1500);
+    }
+    
+    showCode();
+}
+
+// 54. Speed Reader
+function initSpeedReader() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Speed Reader</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="reader-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">WPM:</span>
+                <span class="stat-value" id="reader-wpm">0</span>
+            </div>
+        </div>
+        <div id="reader-text" class="test-area" style="font-size: 24px; text-align: left; line-height: 1.8;"></div>
+        <div id="reader-question" style="display: none;"></div>
+        <div id="reader-options" class="answer-options"></div>
+    `;
+    
+    const passages = [
+        {
+            text: "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet. It is often used to test fonts and keyboards.",
+            question: "What does the sentence contain?",
+            answers: ["Every letter of the alphabet", "Only vowels", "Only consonants", "Numbers"],
+            correct: 0
+        },
+        {
+            text: "JavaScript is a programming language that enables interactive web pages. It is an essential part of web applications along with HTML and CSS.",
+            question: "What is JavaScript?",
+            answers: ["A programming language", "A coffee type", "A font", "A browser"],
+            correct: 0
+        },
+        {
+            text: "The human brain contains approximately 86 billion neurons. These neurons communicate through electrical and chemical signals to control all body functions.",
+            question: "How many neurons are in the human brain?",
+            answers: ["86 billion", "86 million", "86 thousand", "86 trillion"],
+            correct: 0
+        }
+    ];
+    
+    let currentPassage = 0;
+    let score = 0;
+    let startTime = 0;
+    
+    function showPassage() {
+        if (currentPassage >= passages.length) {
+            document.getElementById('reader-text').innerHTML = `<div style="text-align: center; font-size: 48px; color: var(--text-accent);">Test Complete! Score: ${score}/${passages.length}</div>`;
+            document.getElementById('reader-options').innerHTML = '';
+            return;
+        }
+        
+        const passage = passages[currentPassage];
+        const textEl = document.getElementById('reader-text');
+        textEl.textContent = passage.text;
+        textEl.style.display = 'block';
+        document.getElementById('reader-question').style.display = 'none';
+        document.getElementById('reader-options').innerHTML = '';
+        
+        startTime = Date.now();
+        
+        setTimeout(() => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const words = passage.text.split(' ').length;
+            const wpm = Math.round((words / elapsed) * 60);
+            document.getElementById('reader-wpm').textContent = wpm;
+            
+            textEl.style.display = 'none';
+            document.getElementById('reader-question').style.display = 'block';
+            document.getElementById('reader-question').innerHTML = `<div class="question">${passage.question}</div>`;
+            
+            const optionsDiv = document.getElementById('reader-options');
+            passage.answers.forEach((answer, i) => {
+                const btn = document.createElement('div');
+                btn.className = 'answer-option';
+                btn.textContent = answer;
+                btn.onclick = () => checkAnswer(i, passage.correct);
+                optionsDiv.appendChild(btn);
+            });
+        }, 5000);
+    }
+    
+    function checkAnswer(selected, correct) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === correct) {
+            score++;
+            document.getElementById('reader-score').textContent = score;
+            SoundSystem.playSuccess();
+            options[selected].classList.add('correct');
+        } else {
+            SoundSystem.playFailure();
+            options[selected].classList.add('incorrect');
+            options[correct].classList.add('correct');
+        }
+        
+        currentPassage++;
+        setTimeout(showPassage, 2000);
+    }
+    
+    showPassage();
+}
+
+// 55. Card Matching
+function initCardMatching() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Card Matching</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="card-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="card-moves">0</span>
+            </div>
+        </div>
+        <div id="card-grid" style="display: grid; grid-template-columns: repeat(4, 120px); gap: 15px; justify-content: center; margin: 40px auto;"></div>
+    `;
+    
+    const cards = ['🂡', '🂢', '🂣', '🂤', '🂥', '🂦', '🂧', '🂨'];
+    const deck = [...cards, ...cards].sort(() => Math.random() - 0.5);
+    let flipped = [];
+    let matched = [];
+    let moves = 0;
+    let score = 0;
+    
+    const grid = document.getElementById('card-grid');
+    
+    deck.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.style.width = '120px';
+        cardEl.style.height = '160px';
+        cardEl.style.backgroundColor = 'var(--bg-secondary)';
+        cardEl.style.border = '4px solid var(--border-primary)';
+        cardEl.style.display = 'flex';
+        cardEl.style.alignItems = 'center';
+        cardEl.style.justifyContent = 'center';
+        cardEl.style.fontSize = '64px';
+        cardEl.style.cursor = 'pointer';
+        cardEl.style.userSelect = 'none';
+        cardEl.textContent = '🂠';
+        cardEl.dataset.index = index;
+        cardEl.dataset.card = card;
+        
+        cardEl.onclick = () => flipCard(index);
+        grid.appendChild(cardEl);
+    });
+    
+    function flipCard(index) {
+        if (flipped.length >= 2 || flipped.includes(index) || matched.includes(index)) return;
+        
+        const cards = grid.children;
+        cards[index].textContent = deck[index];
+        flipped.push(index);
+        SoundSystem.playClick();
+        
+        if (flipped.length === 2) {
+            moves++;
+            document.getElementById('card-moves').textContent = moves;
+            
+            const [first, second] = flipped;
+            if (deck[first] === deck[second]) {
+                matched.push(first, second);
+                score += 10;
+                document.getElementById('card-score').textContent = score;
+                SoundSystem.playSuccess();
+                flipped = [];
+                
+                if (matched.length === deck.length) {
+                    setTimeout(() => {
+                        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-accent); font-size: 48px;">
+                            🎉 You Win! 🎉<br>Moves: ${moves}
+                        </div>`;
+                        SoundSystem.playPowerUp();
+                    }, 500);
+                }
+            } else {
+                setTimeout(() => {
+                    cards[first].textContent = '🂠';
+                    cards[second].textContent = '🂠';
+                    flipped = [];
+                    SoundSystem.playFailure();
+                }, 1000);
+            }
+        }
+    }
+}
+
+// 56. Morse Code
+function initMorseCode() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Morse Code</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="morse-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="morse-level">1</span>
+            </div>
+        </div>
+        <div id="morse-display" class="test-area" style="font-size: 72px; font-family: monospace; letter-spacing: 10px;">
+            ···
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="text" id="morse-input" placeholder="Type the letter" style="width: 200px; font-size: 48px; text-align: center; text-transform: uppercase;" maxlength="1">
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px; margin: 20px;">
+            Decode the morse code and type the letter!
+        </div>
+    `;
+    
+    const morseCode = {
+        'A': '·−', 'B': '−···', 'C': '−·−·', 'D': '−··', 'E': '·',
+        'F': '··−·', 'G': '−−·', 'H': '····', 'I': '··', 'J': '·−−−',
+        'K': '−·−', 'L': '·−··', 'M': '−−', 'N': '−·', 'O': '−−−',
+        'P': '·−−·', 'Q': '−−·−', 'R': '·−·', 'S': '···', 'T': '−',
+        'U': '··−', 'V': '···−', 'W': '·−−', 'X': '−··−', 'Y': '−·−−', 'Z': '−−··'
+    };
+    
+    const letters = Object.keys(morseCode);
+    let currentLetter = '';
+    let score = 0;
+    let level = 1;
+    
+    function newCode() {
+        currentLetter = letters[Math.floor(Math.random() * letters.length)];
+        document.getElementById('morse-display').textContent = morseCode[currentLetter];
+        document.getElementById('morse-input').value = '';
+        document.getElementById('morse-input').focus();
+    }
+    
+    document.getElementById('morse-input').addEventListener('input', (e) => {
+        const guess = e.target.value.toUpperCase();
+        if (guess === currentLetter) {
+            score += 10;
+            level++;
+            document.getElementById('morse-score').textContent = score;
+            document.getElementById('morse-level').textContent = level;
+            SoundSystem.playSuccess();
+            VisualEffects.pulseElement(document.getElementById('morse-display'));
+            setTimeout(newCode, 500);
+        }
+    });
+    
+    newCode();
+}
+
+// 57. Binary Challenge
+function initBinaryChallenge() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Binary Challenge</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="binary-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="binary-time">60</span>
+            </div>
+        </div>
+        <div id="binary-number" class="test-area" style="font-size: 64px; font-family: monospace;">
+            00000000
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="binary-input" placeholder="Decimal value" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+        <button id="binary-submit" onclick="checkBinary()">SUBMIT</button>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px; margin: 20px;">
+            Convert binary to decimal! Type answer to start
+        </div>
+    `;
+    
+    let score = 0;
+    let timeLeft = 60;
+    let currentNumber = 0;
+    let gameStarted = false;
+    
+    function newNumber() {
+        currentNumber = Math.floor(Math.random() * 256);
+        document.getElementById('binary-number').textContent = currentNumber.toString(2).padStart(8, '0');
+        document.getElementById('binary-input').value = '';
+        document.getElementById('binary-input').focus();
+    }
+    
+    window.checkBinary = function() {
+        if (!gameStarted) {
+            gameStarted = true;
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('binary-time').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('binary-number').textContent = `Game Over! Score: ${score}`;
+                    document.getElementById('binary-input').disabled = true;
+                    document.getElementById('binary-submit').disabled = true;
+                }
+            }, 1000);
+        }
+        
+        const guess = parseInt(document.getElementById('binary-input').value);
+        if (guess === currentNumber) {
+            score += 10;
+            document.getElementById('binary-score').textContent = score;
+            SoundSystem.playSuccess();
+            newNumber();
+        } else {
+            SoundSystem.playFailure();
+        }
+    };
+    
+    document.getElementById('binary-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkBinary();
+    });
+    
+    newNumber();
+}
+
+// 58. Path Finder
+function initPathFinder() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Path Finder</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="path-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Moves:</span>
+                <span class="stat-value" id="path-moves">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="path-canvas" width="500" height="500"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click cells to find the shortest path from red to green!
+        </div>
+    `;
+    
+    const canvas = document.getElementById('path-canvas');
+    const ctx = canvas.getContext('2d');
+    const gridSize = 10;
+    const cellSize = 50;
+    
+    let start = { x: 0, y: 0 };
+    let goal = { x: 9, y: 9 };
+    let path = [];
+    let level = 1;
+    let moves = 0;
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw grid
+        for (let y = 0; y < gridSize; y++) {
+            for (let x = 0; x < gridSize; x++) {
+                ctx.strokeStyle = '#333';
+                ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
+        }
+        
+        // Draw path
+        ctx.fillStyle = '#0088ff';
+        path.forEach(p => {
+            ctx.fillRect(p.x * cellSize + 5, p.y * cellSize + 5, cellSize - 10, cellSize - 10);
+        });
+        
+        // Draw start and goal
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(start.x * cellSize + 5, start.y * cellSize + 5, cellSize - 10, cellSize - 10);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(goal.x * cellSize + 5, goal.y * cellSize + 5, cellSize - 10, cellSize - 10);
+    }
+    
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / cellSize);
+        const y = Math.floor((e.clientY - rect.top) / cellSize);
+        
+        if ((x === start.x && y === start.y) || (x === goal.x && y === goal.y)) return;
+        
+        const idx = path.findIndex(p => p.x === x && p.y === y);
+        if (idx !== -1) {
+            path.splice(idx, 1);
+        } else {
+            path.push({ x, y });
+            moves++;
+            document.getElementById('path-moves').textContent = moves;
+        }
+        
+        // Check if goal reached
+        const lastPath = path[path.length - 1];
+        if (lastPath && Math.abs(lastPath.x - goal.x) <= 1 && Math.abs(lastPath.y - goal.y) <= 1) {
+            const optimalMoves = Math.abs(goal.x - start.x) + Math.abs(goal.y - start.y);
+            if (moves <= optimalMoves + 2) {
+                SoundSystem.playSuccess();
+                level++;
+                document.getElementById('path-level').textContent = level;
+                
+                // New level
+                start = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+                goal = { x: Math.floor(Math.random() * gridSize), y: Math.floor(Math.random() * gridSize) };
+                path = [];
+                moves = 0;
+                document.getElementById('path-moves').textContent = moves;
+            }
+        }
+        
+        SoundSystem.playClick();
+        draw();
+    };
+    
+    draw();
+}
+
+// 59. Shape Matcher
+function initShapeMatcher() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Shape Matcher</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="shape-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="shape-level">1</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="shape-canvas" width="600" height="300"></canvas>
+        </div>
+        <div id="shape-options" class="answer-options"></div>
+    `;
+    
+    const canvas = document.getElementById('shape-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    const shapes = ['triangle', 'square', 'circle', 'star'];
+    let currentShape = '';
+    let currentRotation = 0;
+    let score = 0;
+    let level = 1;
+    
+    function drawShape(shape, x, y, size, rotation) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        
+        if (shape === 'triangle') {
+            ctx.moveTo(0, -size);
+            ctx.lineTo(size * 0.866, size * 0.5);
+            ctx.lineTo(-size * 0.866, size * 0.5);
+            ctx.closePath();
+        } else if (shape === 'square') {
+            ctx.rect(-size / 2, -size / 2, size, size);
+        } else if (shape === 'circle') {
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
+        } else if (shape === 'star') {
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                const r = i % 2 === 0 ? size : size / 2;
+                const px = Math.cos(angle) * r;
+                const py = Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+        }
+        
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+    function newQuestion() {
+        currentShape = shapes[Math.floor(Math.random() * shapes.length)];
+        currentRotation = (Math.floor(Math.random() * 4) * Math.PI) / 2;
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawShape(currentShape, 300, 150, 80, currentRotation);
+        
+        const options = shapes.sort(() => Math.random() - 0.5);
+        const optionsDiv = document.getElementById('shape-options');
+        optionsDiv.innerHTML = '';
+        
+        options.forEach((shape, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'answer-option';
+            btn.textContent = shape.charAt(0).toUpperCase() + shape.slice(1);
+            btn.style.animation = `slideIn 0.3s ease-out ${i * 0.1}s both`;
+            btn.onclick = () => checkShape(shape);
+            optionsDiv.appendChild(btn);
+        });
+    }
+    
+    function checkShape(selected) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === currentShape) {
+            score += 10;
+            level++;
+            document.getElementById('shape-score').textContent = score;
+            document.getElementById('shape-level').textContent = level;
+            SoundSystem.playSuccess();
+            setTimeout(newQuestion, 1000);
+        } else {
+            SoundSystem.playFailure();
+            setTimeout(newQuestion, 1500);
+        }
+    }
+    
+    newQuestion();
+}
+
+// 60. Quick Math Facts
+function initQuickMathFacts() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Quick Math Facts</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="qmath-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Streak:</span>
+                <span class="stat-value" id="qmath-streak">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="qmath-time">30</span>
+            </div>
+        </div>
+        <div id="qmath-question" class="test-area" style="font-size: 72px; color: var(--text-accent);">
+            5 + 3 = ?
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="qmath-input" placeholder="Answer" style="width: 200px; font-size: 48px; text-align: center;">
+        </div>
+    `;
+    
+    let score = 0;
+    let streak = 0;
+    let timeLeft = 30;
+    let currentAnswer = 0;
+    let gameStarted = false;
+    
+    function newQuestion() {
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        const ops = ['+', '-', '*'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        
+        if (op === '+') currentAnswer = a + b;
+        else if (op === '-') currentAnswer = a - b;
+        else currentAnswer = a * b;
+        
+        document.getElementById('qmath-question').textContent = `${a} ${op} ${b} = ?`;
+        document.getElementById('qmath-input').value = '';
+        document.getElementById('qmath-input').focus();
+    }
+    
+    function checkAnswer() {
+        if (!gameStarted) {
+            gameStarted = true;
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('qmath-time').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('qmath-question').textContent = `Time's Up! Final Score: ${score}`;
+                    document.getElementById('qmath-input').disabled = true;
+                }
+            }, 1000);
+        }
+        
+        const guess = parseInt(document.getElementById('qmath-input').value);
+        if (guess === currentAnswer) {
+            score += 10;
+            streak++;
+            document.getElementById('qmath-score').textContent = score;
+            document.getElementById('qmath-streak').textContent = streak;
+            SoundSystem.playSuccess();
+            VisualEffects.pulseElement(document.getElementById('qmath-question'));
+            newQuestion();
+        } else if (document.getElementById('qmath-input').value !== '') {
+            streak = 0;
+            document.getElementById('qmath-streak').textContent = streak;
+            SoundSystem.playFailure();
+            VisualEffects.shakeElement(document.getElementById('qmath-question'));
+        }
+    }
+    
+    document.getElementById('qmath-input').addEventListener('input', checkAnswer);
+    document.getElementById('qmath-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkAnswer();
+    });
+    
+    newQuestion();
 }
