@@ -1,6 +1,6 @@
 # NuwuBench
 
-A retro-styled human benchmark testing website featuring 50 interactive games to test various cognitive and motor skills.
+A retro-styled human benchmark testing website featuring 60 interactive games to test various cognitive and motor skills.
 
 ## Features
 
@@ -8,7 +8,7 @@ A retro-styled human benchmark testing website featuring 50 interactive games to
 - **Theme Switcher**: Toggle between dark mode (default) and light mode
 - **Auto-Start Games**: Games begin as soon as you start interacting - no START buttons needed!
 - **Restart Functionality**: Easily restart any game with the "Play Again" button
-- **50 Unique Tests**: Comprehensive collection of human capability benchmarks
+- **60 Unique Tests**: Comprehensive collection of human capability benchmarks
 - **Sound Effects**: Interactive audio feedback using Web Audio API
 - **Animations & Effects**: Confetti, shake effects, smooth transitions, and particle effects
 - **Fully Customizable**: Adjustable difficulty, duration, and settings for all tests
@@ -166,6 +166,36 @@ Match related words quickly. Test your vocabulary and cognitive connections unde
 
 ### 50. Maze Navigator 🎮
 Navigate through randomly generated mazes using arrow keys. Reach the goal to advance levels!
+
+### 51. Balance Test 🎯
+Keep a virtual ball balanced on a platform by adjusting the tilt. Tests hand-eye coordination and fine motor control.
+
+### 52. Rhythm Matcher 🎵
+Click in sync with visual and audio beats. Tests rhythm, timing, and musical coordination.
+
+### 53. Code Debugger 💻
+Find syntax errors and bugs in code snippets. Tests programming knowledge and attention to detail.
+
+### 54. Speed Reader 📖
+Read passages and answer comprehension questions quickly. Tests reading speed and retention.
+
+### 55. Card Matching 🃏
+Match playing cards by suit, value, or color. Classic memory game with card themes and scoring.
+
+### 56. Morse Code 📡
+Learn and translate morse code. Type letters to see their morse representation and practice decoding.
+
+### 57. Binary Challenge 🔢
+Convert binary numbers to decimal and vice versa. Tests mathematical skills and pattern recognition.
+
+### 58. Path Finder 🗺️
+Find the shortest path between two points on a grid. Tests spatial reasoning and problem-solving.
+
+### 59. Shape Matcher 🔷
+Match shapes with their rotated versions. Tests spatial awareness and visual pattern recognition.
+
+### 60. Quick Math Facts ⚡
+Rapid-fire basic arithmetic problems. Tests mental math speed and accuracy under time pressure.
 
 ## How to Use
 
