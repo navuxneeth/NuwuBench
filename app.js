@@ -542,6 +542,16 @@ function startTypeTest() {
     let interval;
     
     function updateStats() {
+        // Check if elements still exist (game might have been exited)
+        const wpmEl = document.getElementById('wpm');
+        const accuracyEl = document.getElementById('accuracy');
+        const timeEl = document.getElementById('type-time');
+        
+        if (!wpmEl || !accuracyEl || !timeEl || !input) {
+            clearInterval(interval);
+            return;
+        }
+        
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
         const timeLeft = Math.max(0, duration - elapsed);
         const typed = input.value;
@@ -554,9 +564,9 @@ function startTypeTest() {
         }
         const accuracy = typed.length > 0 ? Math.round((correctChars / typed.length) * 100) : 100;
         
-        document.getElementById('wpm').textContent = wpm;
-        document.getElementById('accuracy').textContent = accuracy + '%';
-        document.getElementById('type-time').textContent = timeLeft.toFixed(1);
+        wpmEl.textContent = wpm;
+        accuracyEl.textContent = accuracy + '%';
+        timeEl.textContent = timeLeft.toFixed(1);
         
         // Check if the entire sentence is finished
         const isComplete = typed.length >= sampleText.length && typed.trim() === sampleText.trim();
