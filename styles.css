@@ -611,47 +611,6 @@ canvas {
     animation: slideIn 0.5s ease-out;
 }
 
-.game-card:nth-child(1) { border-color: var(--color-red); }
-.game-card:nth-child(2) { border-color: var(--color-orange); }
-.game-card:nth-child(3) { border-color: var(--color-yellow); }
-.game-card:nth-child(4) { border-color: var(--color-green); }
-.game-card:nth-child(5) { border-color: var(--color-cyan); }
-.game-card:nth-child(6) { border-color: var(--color-blue); }
-.game-card:nth-child(7) { border-color: var(--color-purple); }
-.game-card:nth-child(8) { border-color: var(--color-pink); }
-.game-card:nth-child(9) { border-color: var(--color-lime); }
-.game-card:nth-child(10) { border-color: var(--color-indigo); }
-.game-card:nth-child(11) { border-color: var(--color-red); }
-.game-card:nth-child(12) { border-color: var(--color-orange); }
-.game-card:nth-child(13) { border-color: var(--color-yellow); }
-.game-card:nth-child(14) { border-color: var(--color-green); }
-.game-card:nth-child(15) { border-color: var(--color-cyan); }
-.game-card:nth-child(16) { border-color: var(--color-blue); }
-.game-card:nth-child(17) { border-color: var(--color-purple); }
-.game-card:nth-child(18) { border-color: var(--color-pink); }
-.game-card:nth-child(19) { border-color: var(--color-lime); }
-.game-card:nth-child(20) { border-color: var(--color-indigo); }
-.game-card:nth-child(21) { border-color: var(--color-red); }
-.game-card:nth-child(22) { border-color: var(--color-orange); }
-.game-card:nth-child(23) { border-color: var(--color-yellow); }
-.game-card:nth-child(24) { border-color: var(--color-green); }
-.game-card:nth-child(25) { border-color: var(--color-cyan); }
-.game-card:nth-child(26) { border-color: var(--color-blue); }
-.game-card:nth-child(27) { border-color: var(--color-purple); }
-.game-card:nth-child(28) { border-color: var(--color-pink); }
-.game-card:nth-child(29) { border-color: var(--color-lime); }
-.game-card:nth-child(30) { border-color: var(--color-indigo); }
-.game-card:nth-child(31) { border-color: var(--color-red); }
-.game-card:nth-child(32) { border-color: var(--color-orange); }
-.game-card:nth-child(33) { border-color: var(--color-yellow); }
-.game-card:nth-child(34) { border-color: var(--color-green); }
-.game-card:nth-child(35) { border-color: var(--color-cyan); }
-.game-card:nth-child(36) { border-color: var(--color-blue); }
-.game-card:nth-child(37) { border-color: var(--color-purple); }
-.game-card:nth-child(38) { border-color: var(--color-pink); }
-.game-card:nth-child(39) { border-color: var(--color-lime); }
-.game-card:nth-child(40) { border-color: var(--color-indigo); }
-
 .circle-target {
     animation: pulse 1s infinite;
 }
