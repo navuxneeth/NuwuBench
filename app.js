@@ -411,17 +411,43 @@ function loadClickRecords() {
 // 2. Type Speed Test
 function initTypeSpeed() {
     const container = document.getElementById('game-container');
-    const sampleTexts = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Programming is the art of telling another human what one wants the computer to do.",
-        "In the world of technology, speed and accuracy are key to success.",
-        "Practice makes perfect, especially when it comes to typing skills."
-    ];
+    
+    const sampleTexts = {
+        easy: [
+            "The quick brown fox jumps over the lazy dog.",
+            "She sells seashells by the seashore.",
+            "A journey of a thousand miles begins with a single step.",
+            "Practice makes perfect when you try your best.",
+            "Time flies when you are having fun with friends."
+        ],
+        medium: [
+            "Programming is the art of telling another human what one wants the computer to do.",
+            "In the world of technology, speed and accuracy are key to success.",
+            "The ability to type quickly and accurately is an essential skill in the modern workplace.",
+            "Learning to code requires patience, persistence, and a willingness to make mistakes.",
+            "Effective communication through written text is crucial in our digital age."
+        ],
+        hard: [
+            "The simultaneous occurrence of multiple unprecedented technological advancements has fundamentally transformed the socioeconomic landscape of contemporary civilization.",
+            "Notwithstanding the multifaceted complexities inherent in quantum mechanics, researchers persistently endeavor to unravel the enigmatic properties of subatomic particles.",
+            "The juxtaposition of traditional methodologies with innovative paradigms necessitates a comprehensive reassessment of conventional educational frameworks.",
+            "Interdisciplinary collaboration among heterogeneous teams facilitates the synthesis of diverse perspectives, thereby catalyzing revolutionary breakthroughs in scientific research.",
+            "The proliferation of sophisticated algorithms and machine learning techniques has precipitated an exponential increase in computational efficiency across various industrial sectors."
+        ]
+    };
     
     container.innerHTML = `
         <h2 class="game-title">Type Speed Test</h2>
         <div class="settings-panel">
             <h4>Settings</h4>
+            <div class="setting-item">
+                <span class="setting-label">Difficulty:</span>
+                <select id="type-difficulty">
+                    <option value="easy">Easy (Short & Simple)</option>
+                    <option value="medium" selected>Medium (Moderate Length)</option>
+                    <option value="hard">Hard (Long & Complex)</option>
+                </select>
+            </div>
             <div class="setting-item">
                 <span class="setting-label">Duration (seconds):</span>
                 <select id="type-duration">
@@ -451,7 +477,15 @@ function initTypeSpeed() {
         </div>
     `;
     
-    document.getElementById('sample-text').textContent = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+    const difficultySelect = document.getElementById('type-difficulty');
+    const setSampleText = () => {
+        const difficulty = difficultySelect.value;
+        const texts = sampleTexts[difficulty];
+        document.getElementById('sample-text').textContent = texts[Math.floor(Math.random() * texts.length)];
+    };
+    
+    difficultySelect.addEventListener('change', setSampleText);
+    setSampleText();
     
     const input = document.getElementById('type-input');
     let testStarted = false;
@@ -475,8 +509,8 @@ function startTypeTest() {
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
         const timeLeft = Math.max(0, duration - elapsed);
         const typed = input.value;
-        const words = typed.trim().split(/\s+/).length;
-        const wpm = Math.round((words / elapsed) * 60);
+        const words = typed.trim().split(/\s+/).filter(w => w.length > 0).length;
+        const wpm = elapsed > 0 ? Math.round((words / elapsed) * 60) : 0;
         
         let correctChars = 0;
         for (let i = 0; i < Math.min(typed.length, sampleText.length); i++) {
@@ -488,9 +522,26 @@ function startTypeTest() {
         document.getElementById('accuracy').textContent = accuracy + '%';
         document.getElementById('type-time').textContent = timeLeft.toFixed(1);
         
-        if (elapsed >= duration) {
+        // Check if the entire sentence is finished
+        const isComplete = typed.length >= sampleText.length && typed.trim() === sampleText.trim();
+        
+        if (elapsed >= duration || isComplete) {
             clearInterval(interval);
             input.disabled = true;
+            
+            if (isComplete) {
+                SoundSystem.playSuccess();
+                const finalTime = elapsed.toFixed(2);
+                document.getElementById('sample-text').innerHTML = `
+                    <span style="color: var(--text-accent);">✓ Complete!</span> 
+                    Finished in ${finalTime}s with ${accuracy}% accuracy at ${wpm} WPM
+                `;
+            } else {
+                document.getElementById('sample-text').innerHTML = `
+                    <span style="color: var(--text-secondary);">Time's up!</span> 
+                    Final stats: ${accuracy}% accuracy at ${wpm} WPM
+                `;
+            }
         }
     }
     
@@ -2211,8 +2262,8 @@ function initReflexTest() {
                 <span class="stat-value" id="reflex-round">0/5</span>
             </div>
         </div>
-        <div id="reflex-area" class="click-area" style="background-color: var(--error-bg); font-size: 48px;">
-            Press SPACEBAR when ready
+        <div id="reflex-area" class="click-area" style="background-color: var(--bg-secondary); font-size: 48px;">
+            Press SPACEBAR to start
         </div>
     `;
     
@@ -2221,57 +2272,79 @@ function initReflexTest() {
     let times = [];
     let startTime;
     let waiting = false;
-    let ready = true;
+    let ready = false;
+    let gameStarted = false;
+    let currentTimeout = null;
     
     function startRound() {
         if (round >= 5) {
             const avg = times.reduce((a, b) => a + b, 0) / times.length;
             area.textContent = `Complete! Average: ${avg.toFixed(0)}ms`;
-            area.style.backgroundColor = 'var(--bg-secondary)';
+            area.style.backgroundColor = 'var(--success-bg)';
+            SoundSystem.playSuccess();
+            SoundSystem.playPowerUp();
             return;
         }
         
         area.style.backgroundColor = 'var(--error-bg)';
-        area.textContent = 'Wait...';
+        area.textContent = 'Wait for GREEN...';
         waiting = true;
         ready = false;
         
-        setTimeout(() => {
+        currentTimeout = setTimeout(() => {
             area.style.backgroundColor = 'var(--success-bg)';
-            area.textContent = 'GO!';
+            area.textContent = 'GO! Press SPACEBAR!';
             startTime = Date.now();
             waiting = false;
             ready = true;
         }, 2000 + Math.random() * 3000);
     }
     
-    document.addEventListener('keydown', (e) => {
+    const keyHandler = (e) => {
         if (e.code === 'Space' && currentGame === 'reflex-test') {
             e.preventDefault();
-            if (waiting) {
+            
+            if (!gameStarted) {
+                // Start the game
+                gameStarted = true;
+                SoundSystem.playClick();
+                startRound();
+            } else if (waiting) {
+                // Too early - pressed before green
+                SoundSystem.playFailure();
+                area.style.backgroundColor = 'var(--error-bg)';
                 area.textContent = 'Too early! Wait for GREEN';
+                waiting = false;
+                ready = false;
+                if (currentTimeout) clearTimeout(currentTimeout);
                 setTimeout(() => {
                     if (round < 5) startRound();
                 }, 2000);
             } else if (ready) {
+                // Correct timing - pressed when green
                 const reactionTime = Date.now() - startTime;
                 times.push(reactionTime);
                 round++;
                 document.getElementById('reflex-round').textContent = `${round}/5`;
                 const avg = times.reduce((a, b) => a + b, 0) / times.length;
                 document.getElementById('reflex-avg').textContent = avg.toFixed(0) + 'ms';
+                SoundSystem.playSuccess();
                 ready = false;
                 setTimeout(() => startRound(), 1000);
             }
         }
-    });
+    };
     
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && round === 0 && !waiting && !ready) {
-            e.preventDefault();
-            startRound();
-        }
-    });
+    document.addEventListener('keydown', keyHandler);
+    
+    // Clean up event listener when leaving the game
+    const originalBackToMenu = window.backToMenu;
+    window.backToMenu = function() {
+        document.removeEventListener('keydown', keyHandler);
+        if (currentTimeout) clearTimeout(currentTimeout);
+        window.backToMenu = originalBackToMenu;
+        originalBackToMenu();
+    };
 }
 
 // 20. Stroop Test
