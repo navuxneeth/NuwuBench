@@ -274,6 +274,11 @@ function loadGame(gameName) {
         case 'path-finder': initPathFinder(); break;
         case 'shape-matcher': initShapeMatcher(); break;
         case 'quick-math-facts': initQuickMathFacts(); break;
+        case 'typing-race': initTypingRace(); break;
+        case 'number-prediction': initNumberPrediction(); break;
+        case 'focus-test': initFocusTest(); break;
+        case 'grid-memory-advanced': initGridMemoryAdvanced(); break;
+        case 'quick-sort': initQuickSort(); break;
     }
 }
 
@@ -409,6 +414,8 @@ function loadClickRecords() {
 }
 
 // 2. Type Speed Test
+let typeTestSampleText = '';
+
 function initTypeSpeed() {
     const container = document.getElementById('game-container');
     
@@ -472,16 +479,43 @@ function initTypeSpeed() {
             </div>
         </div>
         <div class="test-area">
-            <div id="sample-text" style="font-size: 28px; color: var(--text-secondary); margin-bottom: 20px;"></div>
+            <div id="sample-text" style="font-size: 28px; margin-bottom: 20px; font-family: 'Courier New', monospace; line-height: 1.5;"></div>
             <textarea id="type-input" class="code-editor" placeholder="Start typing here to begin..." style="min-height: 150px;"></textarea>
         </div>
     `;
     
     const difficultySelect = document.getElementById('type-difficulty');
+    
     const setSampleText = () => {
         const difficulty = difficultySelect.value;
         const texts = sampleTexts[difficulty];
-        document.getElementById('sample-text').textContent = texts[Math.floor(Math.random() * texts.length)];
+        typeTestSampleText = texts[Math.floor(Math.random() * texts.length)];
+        updateSampleTextDisplay('');
+    };
+    
+    const updateSampleTextDisplay = (typed) => {
+        const sampleTextEl = document.getElementById('sample-text');
+        let html = '';
+        
+        for (let i = 0; i < typeTestSampleText.length; i++) {
+            const char = typeTestSampleText[i];
+            const typedChar = typed[i];
+            
+            if (i < typed.length) {
+                if (typedChar === char) {
+                    // Correct character - green
+                    html += `<span style="color: #2ecc71;">${char === ' ' ? '&nbsp;' : char}</span>`;
+                } else {
+                    // Wrong character - red
+                    html += `<span style="color: #e74c3c; background-color: rgba(231, 76, 60, 0.2);">${char === ' ' ? '&nbsp;' : char}</span>`;
+                }
+            } else {
+                // Not yet typed - default color
+                html += `<span style="color: var(--text-secondary);">${char === ' ' ? '&nbsp;' : char}</span>`;
+            }
+        }
+        
+        sampleTextEl.innerHTML = html;
     };
     
     difficultySelect.addEventListener('change', setSampleText);
@@ -491,6 +525,8 @@ function initTypeSpeed() {
     let testStarted = false;
     
     input.addEventListener('input', () => {
+        updateSampleTextDisplay(input.value);
+        
         if (!testStarted) {
             testStarted = true;
             startTypeTest();
@@ -501,11 +537,21 @@ function initTypeSpeed() {
 function startTypeTest() {
     const duration = parseInt(document.getElementById('type-duration').value);
     const input = document.getElementById('type-input');
-    const sampleText = document.getElementById('sample-text').textContent;
+    const sampleText = typeTestSampleText;
     const startTime = Date.now();
     let interval;
     
     function updateStats() {
+        // Check if elements still exist (game might have been exited)
+        const wpmEl = document.getElementById('wpm');
+        const accuracyEl = document.getElementById('accuracy');
+        const timeEl = document.getElementById('type-time');
+        
+        if (!wpmEl || !accuracyEl || !timeEl || !input) {
+            clearInterval(interval);
+            return;
+        }
+        
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
         const timeLeft = Math.max(0, duration - elapsed);
         const typed = input.value;
@@ -518,9 +564,9 @@ function startTypeTest() {
         }
         const accuracy = typed.length > 0 ? Math.round((correctChars / typed.length) * 100) : 100;
         
-        document.getElementById('wpm').textContent = wpm;
-        document.getElementById('accuracy').textContent = accuracy + '%';
-        document.getElementById('type-time').textContent = timeLeft.toFixed(1);
+        wpmEl.textContent = wpm;
+        accuracyEl.textContent = accuracy + '%';
+        timeEl.textContent = timeLeft.toFixed(1);
         
         // Check if the entire sentence is finished
         const isComplete = typed.length >= sampleText.length && typed.trim() === sampleText.trim();
@@ -6310,4 +6356,512 @@ function initQuickMathFacts() {
     });
     
     newQuestion();
+}
+
+// 61. Typing Race
+function initTypingRace() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Typing Race</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="race-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="race-time">30</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Speed:</span>
+                <span class="stat-value" id="race-speed">0 WPM</span>
+            </div>
+        </div>
+        <div id="race-word" class="test-area" style="font-size: 64px; color: var(--text-accent);">
+            Click to Start
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="text" id="race-input" placeholder="Type the word" style="width: 400px; font-size: 32px; text-align: center;">
+        </div>
+    `;
+    
+    const words = ['keyboard', 'computer', 'programming', 'javascript', 'function', 'variable', 'algorithm', 'database', 'network', 'interface', 'developer', 'application', 'software', 'hardware', 'internet', 'website', 'browser', 'server', 'client', 'framework'];
+    let score = 0;
+    let timeLeft = 30;
+    let gameStarted = false;
+    let currentWord = '';
+    let wordsTyped = 0;
+    let startTime = 0;
+    
+    function newWord() {
+        currentWord = words[Math.floor(Math.random() * words.length)];
+        document.getElementById('race-word').textContent = currentWord;
+        document.getElementById('race-input').value = '';
+        document.getElementById('race-input').focus();
+    }
+    
+    document.getElementById('race-word').onclick = () => {
+        if (!gameStarted) {
+            gameStarted = true;
+            startTime = Date.now();
+            newWord();
+            
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('race-time').textContent = timeLeft;
+                
+                const elapsed = (Date.now() - startTime) / 1000;
+                const wpm = elapsed > 0 ? Math.round((wordsTyped / elapsed) * 60) : 0;
+                document.getElementById('race-speed').textContent = wpm + ' WPM';
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('race-word').textContent = `Game Over! You typed ${score} words`;
+                    document.getElementById('race-input').disabled = true;
+                }
+            }, 1000);
+        }
+    };
+    
+    document.getElementById('race-input').addEventListener('input', (e) => {
+        const typed = e.target.value;
+        if (typed === currentWord) {
+            score++;
+            wordsTyped++;
+            document.getElementById('race-score').textContent = score;
+            SoundSystem.playSuccess();
+            newWord();
+        }
+    });
+}
+
+// 62. Number Prediction
+function initNumberPrediction() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Number Prediction</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="pred-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="pred-level">1</span>
+            </div>
+        </div>
+        <div id="pred-sequence" class="test-area" style="font-size: 48px; color: var(--text-accent);">
+            2, 4, 6, 8, ?
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="pred-input" placeholder="Next number" style="width: 200px; font-size: 32px; text-align: center;">
+        </div>
+        <button id="pred-submit" onclick="checkPrediction()">SUBMIT</button>
+    `;
+    
+    let score = 0;
+    let level = 1;
+    
+    const patterns = [
+        { seq: [2, 4, 6, 8], next: 10, rule: 'add 2' },
+        { seq: [1, 3, 5, 7], next: 9, rule: 'add 2' },
+        { seq: [5, 10, 15, 20], next: 25, rule: 'add 5' },
+        { seq: [10, 20, 30, 40], next: 50, rule: 'add 10' },
+        { seq: [1, 2, 4, 8], next: 16, rule: 'multiply by 2' },
+        { seq: [3, 6, 12, 24], next: 48, rule: 'multiply by 2' },
+        { seq: [100, 90, 80, 70], next: 60, rule: 'subtract 10' },
+        { seq: [50, 45, 40, 35], next: 30, rule: 'subtract 5' },
+        { seq: [1, 4, 9, 16], next: 25, rule: 'squares' },
+        { seq: [1, 1, 2, 3], next: 5, rule: 'fibonacci' },
+        { seq: [10, 11, 13, 16], next: 20, rule: 'add increasing' },
+        { seq: [20, 19, 17, 14], next: 10, rule: 'subtract increasing' }
+    ];
+    
+    let currentPattern = null;
+    
+    function newPattern() {
+        currentPattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const display = currentPattern.seq.join(', ') + ', ?';
+        document.getElementById('pred-sequence').textContent = display;
+        document.getElementById('pred-input').value = '';
+        document.getElementById('pred-input').focus();
+    }
+    
+    window.checkPrediction = function() {
+        const guess = parseInt(document.getElementById('pred-input').value);
+        if (guess === currentPattern.next) {
+            score += 10;
+            level++;
+            document.getElementById('pred-score').textContent = score;
+            document.getElementById('pred-level').textContent = level;
+            SoundSystem.playSuccess();
+            VisualEffects.pulseElement(document.getElementById('pred-sequence'));
+            setTimeout(newPattern, 1000);
+        } else {
+            SoundSystem.playFailure();
+            VisualEffects.shakeElement(document.getElementById('pred-sequence'));
+        }
+    };
+    
+    document.getElementById('pred-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkPrediction();
+    });
+    
+    newPattern();
+}
+
+// 63. Focus Test
+function initFocusTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Focus Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="focus-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="focus-accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="focus-time">30</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="focus-canvas" width="600" height="400"></canvas>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click only the GREEN circles! Avoid red distractors. Click to start.
+        </div>
+    `;
+    
+    const canvas = document.getElementById('focus-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let score = 0;
+    let hits = 0;
+    let attempts = 0;
+    let timeLeft = 30;
+    let gameActive = false;
+    let targets = [];
+    
+    function createTarget() {
+        const isGood = Math.random() > 0.3;
+        return {
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: Math.random() * (canvas.height - 60) + 30,
+            radius: 25,
+            color: isGood ? '#00ff00' : '#ff0000',
+            good: isGood
+        };
+    }
+    
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        targets.forEach(target => {
+            ctx.fillStyle = target.color;
+            ctx.beginPath();
+            ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
+    
+    function update() {
+        if (!gameActive) return;
+        
+        // Remove old targets and add new ones
+        if (Math.random() < 0.05) {
+            if (targets.length < 5) {
+                targets.push(createTarget());
+            }
+        }
+        
+        draw();
+    }
+    
+    canvas.onclick = (e) => {
+        if (!gameActive) {
+            gameActive = true;
+            SoundSystem.playClick();
+            
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('focus-time').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    gameActive = false;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '48px VT323';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`Game Over! Score: ${score}`, canvas.width / 2, canvas.height / 2);
+                }
+            }, 1000);
+            
+            setInterval(update, 100);
+            return;
+        }
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        let hitTarget = null;
+        targets.forEach((target, index) => {
+            const dist = Math.sqrt((x - target.x) ** 2 + (y - target.y) ** 2);
+            if (dist < target.radius) {
+                hitTarget = { target, index };
+            }
+        });
+        
+        attempts++;
+        
+        if (hitTarget) {
+            const { target, index } = hitTarget;
+            targets.splice(index, 1);
+            
+            if (target.good) {
+                score += 10;
+                hits++;
+                document.getElementById('focus-score').textContent = score;
+                SoundSystem.playSuccess();
+            } else {
+                score = Math.max(0, score - 5);
+                document.getElementById('focus-score').textContent = score;
+                SoundSystem.playFailure();
+            }
+        }
+        
+        const accuracy = attempts > 0 ? Math.round((hits / attempts) * 100) : 100;
+        document.getElementById('focus-accuracy').textContent = accuracy + '%';
+        
+        draw();
+    };
+    
+    draw();
+}
+
+// 64. Grid Memory Advanced
+function initGridMemoryAdvanced() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Grid Memory Advanced</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="grid-adv-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="grid-adv-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Lives:</span>
+                <span class="stat-value" id="grid-adv-lives">3</span>
+            </div>
+        </div>
+        <div id="grid-adv-container" class="grid-container" style="grid-template-columns: repeat(6, 60px); margin: 40px auto;"></div>
+        <div id="grid-adv-message" style="text-align: center; color: var(--text-accent); font-size: 28px; margin-top: 20px;">
+            Click to start!
+        </div>
+    `;
+    
+    const gridSize = 6;
+    let level = 1;
+    let score = 0;
+    let lives = 3;
+    let correctCells = new Set();
+    let gameStarted = false;
+    
+    const grid = document.getElementById('grid-adv-container');
+    
+    for (let i = 0; i < gridSize * gridSize; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'grid-cell';
+        cell.style.width = '60px';
+        cell.style.height = '60px';
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    }
+    
+    function startLevel() {
+        correctCells.clear();
+        document.getElementById('grid-adv-message').textContent = 'Memorize the pattern...';
+        
+        const cells = grid.children;
+        for (let cell of cells) {
+            cell.onclick = null;
+            cell.classList.remove('active', 'shown');
+        }
+        
+        const numCells = Math.min(3 + level, 15);
+        while (correctCells.size < numCells) {
+            correctCells.add(Math.floor(Math.random() * (gridSize * gridSize)));
+        }
+        
+        correctCells.forEach(index => {
+            cells[index].classList.add('shown');
+        });
+        
+        setTimeout(() => {
+            for (let cell of cells) {
+                cell.classList.remove('shown');
+            }
+            
+            setTimeout(() => {
+                document.getElementById('grid-adv-message').textContent = 'Click the cells you remember!';
+                const clicked = new Set();
+                
+                for (let cell of cells) {
+                    cell.onclick = function() {
+                        const index = parseInt(this.dataset.index);
+                        
+                        if (clicked.has(index)) return;
+                        clicked.add(index);
+                        
+                        if (correctCells.has(index)) {
+                            this.classList.add('active');
+                            SoundSystem.playSuccess();
+                            
+                            if (clicked.size === correctCells.size) {
+                                let allCorrect = true;
+                                clicked.forEach(idx => {
+                                    if (!correctCells.has(idx)) allCorrect = false;
+                                });
+                                
+                                if (allCorrect) {
+                                    score += level * 10;
+                                    level++;
+                                    document.getElementById('grid-adv-level').textContent = level;
+                                    document.getElementById('grid-adv-score').textContent = score;
+                                    document.getElementById('grid-adv-message').textContent = 'Perfect! Next level...';
+                                    setTimeout(startLevel, 1500);
+                                }
+                            }
+                        } else {
+                            this.classList.add('incorrect');
+                            lives--;
+                            document.getElementById('grid-adv-lives').textContent = lives;
+                            SoundSystem.playFailure();
+                            
+                            if (lives <= 0) {
+                                document.getElementById('grid-adv-message').textContent = `Game Over! Final Level: ${level}`;
+                                for (let c of cells) c.onclick = null;
+                            }
+                        }
+                    };
+                }
+            }, 500);
+        }, 2000 + level * 200);
+    }
+    
+    grid.onclick = () => {
+        if (!gameStarted) {
+            gameStarted = true;
+            startLevel();
+        }
+    };
+}
+
+// 65. Quick Sort
+function initQuickSort() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Quick Sort</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="sort-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="sort-time">0.0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="sort-level">1</span>
+            </div>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px; margin: 20px 0;">
+            Click numbers in ascending order!
+        </div>
+        <div id="sort-numbers" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin: 40px auto; max-width: 600px;"></div>
+    `;
+    
+    let score = 0;
+    let level = 1;
+    let numbers = [];
+    let sortedSoFar = [];
+    let startTime = 0;
+    
+    function newRound() {
+        const count = Math.min(5 + level, 15);
+        numbers = [];
+        sortedSoFar = [];
+        
+        for (let i = 0; i < count; i++) {
+            numbers.push(Math.floor(Math.random() * 100) + 1);
+        }
+        
+        const container = document.getElementById('sort-numbers');
+        container.innerHTML = '';
+        
+        numbers.forEach((num, index) => {
+            const btn = document.createElement('div');
+            btn.textContent = num;
+            btn.style.cssText = `
+                width: 80px;
+                height: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: var(--bg-secondary);
+                border: 4px solid var(--border-primary);
+                font-size: 32px;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            btn.dataset.value = num;
+            btn.dataset.index = index;
+            
+            btn.onclick = function() {
+                if (startTime === 0) startTime = Date.now();
+                
+                const value = parseInt(this.dataset.value);
+                const sorted = [...numbers].sort((a, b) => a - b);
+                
+                if (value === sorted[sortedSoFar.length]) {
+                    sortedSoFar.push(value);
+                    this.style.backgroundColor = 'var(--success-bg)';
+                    this.style.borderColor = 'var(--success-border)';
+                    this.onclick = null;
+                    SoundSystem.playSuccess();
+                    
+                    if (sortedSoFar.length === numbers.length) {
+                        const elapsed = (Date.now() - startTime) / 1000;
+                        score += Math.round(100 / elapsed);
+                        level++;
+                        document.getElementById('sort-score').textContent = score;
+                        document.getElementById('sort-level').textContent = level;
+                        document.getElementById('sort-time').textContent = elapsed.toFixed(1) + 's';
+                        SoundSystem.playPowerUp();
+                        startTime = 0;
+                        setTimeout(newRound, 1500);
+                    }
+                } else {
+                    SoundSystem.playFailure();
+                    VisualEffects.shakeElement(this);
+                }
+            };
+            
+            container.appendChild(btn);
+        });
+    }
+    
+    newRound();
 }
