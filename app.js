@@ -279,6 +279,16 @@ function loadGame(gameName) {
         case 'focus-test': initFocusTest(); break;
         case 'grid-memory-advanced': initGridMemoryAdvanced(); break;
         case 'quick-sort': initQuickSort(); break;
+        case 'color-blind-test': initColorBlindTest(); break;
+        case 'peripheral-vision': initPeripheralVision(); break;
+        case 'dual-n-back': initDualNBack(); break;
+        case 'reflex-chain': initReflexChain(); break;
+        case 'mental-rotation': initMentalRotation(); break;
+        case 'time-perception': initTimePerception(); break;
+        case 'blind-typing': initBlindTyping(); break;
+        case 'pattern-prediction': initPatternPrediction(); break;
+        case 'multitasking-master': initMultitaskingMaster(); break;
+        case 'perfect-pitch': initPerfectPitch(); break;
     }
 }
 
@@ -6861,6 +6871,1027 @@ function initQuickSort() {
             
             container.appendChild(btn);
         });
+    }
+    
+    newRound();
+}
+
+// 66. Color Blind Test
+function initColorBlindTest() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Blind Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="colorblind-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="colorblind-level">1</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="colorblind-canvas" width="500" height="500"></canvas>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <input type="number" id="colorblind-input" placeholder="What number do you see?" style="width: 300px; font-size: 32px; text-align: center;" maxlength="2">
+        </div>
+        <button id="colorblind-submit" onclick="checkColorBlind()">SUBMIT</button>
+    `;
+    
+    const canvas = document.getElementById('colorblind-canvas');
+    const ctx = canvas.getContext('2d');
+    let currentNumber = 0;
+    let score = 0;
+    let level = 1;
+    
+    function drawColorPlate() {
+        currentNumber = Math.floor(Math.random() * 90) + 10;
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Create Ishihara-style plate with random colored dots
+        const dotSize = 15;
+        const bgColors = ['#90EE90', '#98FB98', '#8FBC8F', '#3CB371'];
+        const numColors = ['#FF6B6B', '#FF4444', '#DC143C', '#B22222'];
+        
+        // Background dots
+        for (let i = 0; i < 800; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = dotSize + Math.random() * 10;
+            ctx.fillStyle = bgColors[Math.floor(Math.random() * bgColors.length)];
+            ctx.beginPath();
+            ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw number with contrasting dots
+        ctx.fillStyle = numColors[0];
+        ctx.font = 'bold 250px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Create number pattern
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.fillStyle = 'white';
+        tempCtx.font = 'bold 250px Arial';
+        tempCtx.textAlign = 'center';
+        tempCtx.textBaseline = 'middle';
+        tempCtx.fillText(currentNumber.toString(), tempCanvas.width / 2, tempCanvas.height / 2);
+        
+        // Draw dots forming the number
+        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        for (let y = 0; y < tempCanvas.height; y += dotSize) {
+            for (let x = 0; x < tempCanvas.width; x += dotSize) {
+                const index = (y * tempCanvas.width + x) * 4;
+                if (imageData.data[index + 3] > 128) {
+                    const size = dotSize + Math.random() * 8;
+                    ctx.fillStyle = numColors[Math.floor(Math.random() * numColors.length)];
+                    ctx.beginPath();
+                    ctx.arc(x + Math.random() * 5, y + Math.random() * 5, size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        document.getElementById('colorblind-input').value = '';
+        document.getElementById('colorblind-input').focus();
+    }
+    
+    window.checkColorBlind = function() {
+        const guess = parseInt(document.getElementById('colorblind-input').value);
+        if (guess === currentNumber) {
+            score += 10;
+            level++;
+            document.getElementById('colorblind-score').textContent = score;
+            document.getElementById('colorblind-level').textContent = level;
+            SoundSystem.playSuccess();
+            VisualEffects.pulseElement(canvas);
+            setTimeout(drawColorPlate, 500);
+        } else {
+            SoundSystem.playFailure();
+            VisualEffects.shakeElement(canvas);
+        }
+    };
+    
+    document.getElementById('colorblind-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkColorBlind();
+    });
+    
+    drawColorPlate();
+}
+
+// 67. Peripheral Vision Test
+function initPeripheralVision() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Peripheral Vision Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="peripheral-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="peripheral-accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="peripheral-round">0/20</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0; position: relative; height: 500px; background: #000; border: 4px solid var(--border-primary);">
+            <div id="peripheral-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 72px; color: white;">+</div>
+            <div id="peripheral-target" style="position: absolute; width: 40px; height: 40px; border-radius: 50%; background: #00ff00; display: none;"></div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="startPeripheralTest()" id="peripheral-start">START TEST</button>
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px;">
+            Keep your eyes on the center (+). Click when you see a green dot appear!
+        </div>
+    `;
+    
+    let score = 0;
+    let round = 0;
+    let hits = 0;
+    let attempts = 0;
+    let testActive = false;
+    
+    window.startPeripheralTest = function() {
+        document.getElementById('peripheral-start').disabled = true;
+        testActive = true;
+        nextRound();
+    };
+    
+    function nextRound() {
+        if (round >= 20) {
+            testActive = false;
+            document.getElementById('peripheral-center').textContent = `Complete! Score: ${score}`;
+            return;
+        }
+        
+        round++;
+        document.getElementById('peripheral-round').textContent = `${round}/20`;
+        
+        const target = document.getElementById('peripheral-target');
+        target.style.display = 'none';
+        
+        setTimeout(() => {
+            // Random position at edge of vision
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 150 + Math.random() * 150;
+            const x = Math.cos(angle) * distance + 250;
+            const y = Math.sin(angle) * distance + 250;
+            
+            target.style.left = x + 'px';
+            target.style.top = y + 'px';
+            target.style.display = 'block';
+            
+            const showTime = Date.now();
+            let clicked = false;
+            
+            target.onclick = function() {
+                if (!clicked && testActive) {
+                    clicked = true;
+                    const reactionTime = Date.now() - showTime;
+                    if (reactionTime < 1000) {
+                        score += 10;
+                        hits++;
+                        SoundSystem.playSuccess();
+                    }
+                    attempts++;
+                    updateStats();
+                    setTimeout(nextRound, 300);
+                }
+            };
+            
+            setTimeout(() => {
+                if (!clicked && testActive) {
+                    attempts++;
+                    updateStats();
+                    nextRound();
+                }
+            }, 1000);
+        }, 1000 + Math.random() * 2000);
+    }
+    
+    function updateStats() {
+        document.getElementById('peripheral-score').textContent = score;
+        const accuracy = attempts > 0 ? Math.round((hits / attempts) * 100) : 100;
+        document.getElementById('peripheral-accuracy').textContent = accuracy + '%';
+    }
+}
+
+// 68. Dual N-Back
+function initDualNBack() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Dual N-Back</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="nback-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">N-Level:</span>
+                <span class="stat-value" id="nback-level">2</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="nback-round">0/20</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <div id="nback-grid" style="display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; justify-content: center; margin: 20px auto;"></div>
+        </div>
+        <div style="text-align: center; margin: 20px 0; gap: 20px; display: flex; justify-content: center;">
+            <button onclick="nbackPositionMatch()" style="padding: 20px 40px; font-size: 24px;">POSITION MATCH</button>
+            <button onclick="nbackSoundMatch()" style="padding: 20px 40px; font-size: 24px;">SOUND MATCH</button>
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px;">
+            Press buttons when position or sound matches N steps back!
+        </div>
+    `;
+    
+    const grid = document.getElementById('nback-grid');
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.style.cssText = 'width: 100px; height: 100px; background: #333; border: 2px solid #666;';
+        cell.dataset.index = i;
+        grid.appendChild(cell);
+    }
+    
+    let nLevel = 2;
+    let round = 0;
+    let score = 0;
+    let positions = [];
+    let sounds = [];
+    const soundFreqs = [262, 294, 330, 349, 392, 440, 494, 523];
+    
+    function playTone(freq) {
+        if (!SoundSystem.audioContext) return;
+        const osc = SoundSystem.audioContext.createOscillator();
+        const gain = SoundSystem.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(SoundSystem.audioContext.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.2, SoundSystem.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, SoundSystem.audioContext.currentTime + 0.5);
+        osc.start();
+        osc.stop(SoundSystem.audioContext.currentTime + 0.5);
+    }
+    
+    function nextStimulus() {
+        if (round >= 20) {
+            document.getElementById('nback-grid').innerHTML = `<div style="grid-column: 1 / -1; font-size: 48px; color: var(--text-accent);">Complete! Score: ${score}</div>`;
+            return;
+        }
+        
+        round++;
+        document.getElementById('nback-round').textContent = `${round}/20`;
+        
+        const pos = Math.floor(Math.random() * 9);
+        const soundIdx = Math.floor(Math.random() * soundFreqs.length);
+        
+        positions.push(pos);
+        sounds.push(soundIdx);
+        
+        const cells = grid.children;
+        for (let i = 0; i < 9; i++) {
+            cells[i].style.background = i === pos ? '#0088ff' : '#333';
+        }
+        
+        playTone(soundFreqs[soundIdx]);
+        
+        setTimeout(() => {
+            for (let i = 0; i < 9; i++) {
+                cells[i].style.background = '#333';
+            }
+            setTimeout(nextStimulus, 1500);
+        }, 500);
+    }
+    
+    window.nbackPositionMatch = function() {
+        if (round > nLevel && positions[round - 1] === positions[round - 1 - nLevel]) {
+            score += 10;
+            SoundSystem.playSuccess();
+        } else if (round > nLevel) {
+            score = Math.max(0, score - 5);
+            SoundSystem.playFailure();
+        }
+        document.getElementById('nback-score').textContent = score;
+    };
+    
+    window.nbackSoundMatch = function() {
+        if (round > nLevel && sounds[round - 1] === sounds[round - 1 - nLevel]) {
+            score += 10;
+            SoundSystem.playSuccess();
+        } else if (round > nLevel) {
+            score = Math.max(0, score - 5);
+            SoundSystem.playFailure();
+        }
+        document.getElementById('nback-score').textContent = score;
+    };
+    
+    setTimeout(nextStimulus, 2000);
+}
+
+// 69. Reflex Chain
+function initReflexChain() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Reflex Chain</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Chain:</span>
+                <span class="stat-value" id="chain-current">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Best Chain:</span>
+                <span class="stat-value" id="chain-best">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Speed:</span>
+                <span class="stat-value" id="chain-speed">0 ms</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0; position: relative; height: 600px; width: 600px; margin: 20px auto; background: #000; border: 4px solid var(--border-primary);">
+            <div id="chain-container"></div>
+        </div>
+        <div style="text-align: center; color: var(--text-accent); font-size: 24px;">
+            Click targets in numeric order as fast as you can!
+        </div>
+    `;
+    
+    let currentChain = 0;
+    let bestChain = 0;
+    let targetNumber = 1;
+    let lastClickTime = 0;
+    let avgSpeed = 0;
+    
+    function spawnTargets() {
+        const container = document.getElementById('chain-container');
+        container.innerHTML = '';
+        
+        const numTargets = 5 + Math.floor(currentChain / 5);
+        for (let i = 1; i <= numTargets; i++) {
+            const target = document.createElement('div');
+            target.textContent = i;
+            target.style.cssText = `
+                position: absolute;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                font-weight: bold;
+                cursor: pointer;
+                left: ${Math.random() * 540}px;
+                top: ${Math.random() * 540}px;
+                border: 3px solid #fff;
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            `;
+            
+            target.onclick = function() {
+                const num = parseInt(this.textContent);
+                if (num === targetNumber) {
+                    const now = Date.now();
+                    if (lastClickTime > 0) {
+                        const speed = now - lastClickTime;
+                        avgSpeed = avgSpeed === 0 ? speed : (avgSpeed + speed) / 2;
+                        document.getElementById('chain-speed').textContent = Math.round(avgSpeed) + ' ms';
+                    }
+                    lastClickTime = now;
+                    
+                    currentChain++;
+                    targetNumber++;
+                    document.getElementById('chain-current').textContent = currentChain;
+                    this.style.background = '#00ff00';
+                    SoundSystem.playClick();
+                    
+                    if (targetNumber > numTargets) {
+                        if (currentChain > bestChain) {
+                            bestChain = currentChain;
+                            document.getElementById('chain-best').textContent = bestChain;
+                        }
+                        SoundSystem.playSuccess();
+                        setTimeout(() => {
+                            targetNumber = 1;
+                            spawnTargets();
+                        }, 500);
+                    }
+                } else {
+                    // Wrong target clicked
+                    SoundSystem.playFailure();
+                    VisualEffects.shakeElement(this);
+                    if (currentChain > bestChain) {
+                        bestChain = currentChain;
+                        document.getElementById('chain-best').textContent = bestChain;
+                    }
+                    currentChain = 0;
+                    targetNumber = 1;
+                    avgSpeed = 0;
+                    lastClickTime = 0;
+                    document.getElementById('chain-current').textContent = currentChain;
+                    setTimeout(spawnTargets, 1000);
+                }
+            };
+            
+            container.appendChild(target);
+        }
+    }
+    
+    spawnTargets();
+}
+
+// 70. Mental Rotation
+function initMentalRotation() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Mental Rotation</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="rotation-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="rotation-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="rotation-time">0</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <canvas id="rotation-canvas" width="800" height="400"></canvas>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="checkRotation(true)" style="padding: 20px 40px; font-size: 24px; margin: 10px;">SAME</button>
+            <button onclick="checkRotation(false)" style="padding: 20px 40px; font-size: 24px; margin: 10px;">DIFFERENT</button>
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px;">
+            Are these shapes the same or different? (one may be rotated)
+        </div>
+    `;
+    
+    const canvas = document.getElementById('rotation-canvas');
+    const ctx = canvas.getContext('2d');
+    let score = 0;
+    let level = 1;
+    let currentAnswer = false;
+    let startTime = 0;
+    
+    function drawLShape(x, y, rotation, flip = false) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        if (flip) ctx.scale(-1, 1);
+        
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(-50, -50);
+        ctx.lineTo(-50, 50);
+        ctx.lineTo(30, 50);
+        ctx.lineTo(30, 20);
+        ctx.lineTo(-20, 20);
+        ctx.lineTo(-20, -50);
+        ctx.closePath();
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+    
+    function newQuestion() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const rotation1 = (Math.floor(Math.random() * 4) * Math.PI) / 2;
+        const rotation2 = (Math.floor(Math.random() * 4) * Math.PI) / 2;
+        const isSame = Math.random() > 0.5;
+        
+        currentAnswer = isSame;
+        startTime = Date.now();
+        
+        drawLShape(200, 200, rotation1, false);
+        drawLShape(600, 200, rotation2, !isSame);
+        
+        document.getElementById('rotation-time').textContent = '0.0';
+    }
+    
+    window.checkRotation = function(guess) {
+        const elapsed = (Date.now() - startTime) / 1000;
+        document.getElementById('rotation-time').textContent = elapsed.toFixed(1);
+        
+        if (guess === currentAnswer) {
+            score += 10;
+            level++;
+            document.getElementById('rotation-score').textContent = score;
+            document.getElementById('rotation-level').textContent = level;
+            SoundSystem.playSuccess();
+            setTimeout(newQuestion, 500);
+        } else {
+            SoundSystem.playFailure();
+            VisualEffects.shakeElement(canvas);
+            setTimeout(newQuestion, 1000);
+        }
+    };
+    
+    newQuestion();
+}
+
+// 71. Time Perception
+function initTimePerception() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Time Perception</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="time-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="time-accuracy">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="time-round">0/10</span>
+            </div>
+        </div>
+        <div id="time-display" class="test-area" style="font-size: 64px; color: var(--text-accent); min-height: 200px;">
+            Click START to begin
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <button id="time-button" onclick="timePerceptionAction()">START</button>
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px;">
+            Estimate when the target time has passed!
+        </div>
+    `;
+    
+    let round = 0;
+    let score = 0;
+    let targetTime = 0;
+    let startTime = 0;
+    let state = 'ready'; // ready, timing, result
+    
+    window.timePerceptionAction = function() {
+        if (state === 'ready') {
+            if (round >= 10) {
+                document.getElementById('time-display').textContent = `Game Complete! Final Score: ${score}`;
+                document.getElementById('time-button').disabled = true;
+                return;
+            }
+            
+            round++;
+            targetTime = 3 + Math.random() * 7; // 3-10 seconds
+            document.getElementById('time-round').textContent = `${round}/10`;
+            document.getElementById('time-display').textContent = `Count ${targetTime.toFixed(1)} seconds in your head`;
+            document.getElementById('time-button').textContent = 'READY';
+            
+            setTimeout(() => {
+                state = 'timing';
+                startTime = Date.now();
+                document.getElementById('time-display').textContent = 'Timing... Press STOP when ready!';
+                document.getElementById('time-button').textContent = 'STOP';
+            }, 2000);
+            
+        } else if (state === 'timing') {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const error = Math.abs(elapsed - targetTime);
+            const accuracy = Math.max(0, 100 - (error / targetTime) * 100);
+            
+            if (accuracy > 70) {
+                score += Math.round(accuracy / 10);
+                SoundSystem.playSuccess();
+            } else {
+                SoundSystem.playFailure();
+            }
+            
+            document.getElementById('time-score').textContent = score;
+            document.getElementById('time-accuracy').textContent = accuracy.toFixed(1) + '%';
+            document.getElementById('time-display').textContent = `Target: ${targetTime.toFixed(1)}s | Your time: ${elapsed.toFixed(1)}s | Error: ${error.toFixed(1)}s`;
+            document.getElementById('time-button').textContent = 'NEXT';
+            
+            state = 'ready';
+        }
+    };
+}
+
+// 72. Blind Typing
+function initBlindTyping() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Blind Typing</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="blind-accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">WPM:</span>
+                <span class="stat-value" id="blind-wpm">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Progress:</span>
+                <span class="stat-value" id="blind-progress">0%</span>
+            </div>
+        </div>
+        <div id="blind-target" class="test-area" style="font-size: 32px; font-family: monospace; line-height: 1.5;">
+            The quick brown fox jumps over the lazy dog
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+            <textarea id="blind-input" class="code-editor" style="font-size: 32px; opacity: 0.1; cursor: default; min-height: 150px;" placeholder="Start typing... (you won't see what you type!)"></textarea>
+        </div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px;">
+            Type the text above without seeing what you type!
+        </div>
+    `;
+    
+    const targetText = 'The quick brown fox jumps over the lazy dog';
+    const input = document.getElementById('blind-input');
+    const startTime = Date.now();
+    
+    input.addEventListener('input', () => {
+        const typed = input.value;
+        const progress = Math.min(100, (typed.length / targetText.length) * 100);
+        document.getElementById('blind-progress').textContent = progress.toFixed(0) + '%';
+        
+        let correct = 0;
+        for (let i = 0; i < Math.min(typed.length, targetText.length); i++) {
+            if (typed[i] === targetText[i]) correct++;
+        }
+        
+        const accuracy = typed.length > 0 ? (correct / typed.length) * 100 : 100;
+        document.getElementById('blind-accuracy').textContent = accuracy.toFixed(1) + '%';
+        
+        const elapsed = (Date.now() - startTime) / 1000;
+        const words = typed.trim().split(/\s+/).length;
+        const wpm = elapsed > 0 ? Math.round((words / elapsed) * 60) : 0;
+        document.getElementById('blind-wpm').textContent = wpm;
+        
+        if (typed.length >= targetText.length) {
+            input.disabled = true;
+            input.style.opacity = '1';
+            
+            if (accuracy > 90) {
+                SoundSystem.playSuccess();
+                SoundSystem.playPowerUp();
+                document.getElementById('blind-target').textContent = `Perfect! Accuracy: ${accuracy.toFixed(1)}% at ${wpm} WPM`;
+            } else {
+                document.getElementById('blind-target').textContent = `Complete! Accuracy: ${accuracy.toFixed(1)}% at ${wpm} WPM`;
+            }
+        }
+    });
+}
+
+// 73. Pattern Prediction
+function initPatternPrediction() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Pattern Prediction</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="pattern-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Level:</span>
+                <span class="stat-value" id="pattern-level">1</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Streak:</span>
+                <span class="stat-value" id="pattern-streak">0</span>
+            </div>
+        </div>
+        <div id="pattern-display" class="test-area" style="font-size: 48px; font-family: monospace;">
+            🔴 🔵 🔴 🔵 ?
+        </div>
+        <div id="pattern-options" class="answer-options"></div>
+    `;
+    
+    let score = 0;
+    let level = 1;
+    let streak = 0;
+    
+    const patterns = [
+        { seq: ['🔴', '🔵', '��', '🔵'], next: '🔴', type: 'alternating' },
+        { seq: ['⭐', '⭐', '🌙', '⭐', '⭐'], next: '🌙', type: 'double-single' },
+        { seq: ['🟢', '🟡', '🔴', '🟢', '🟡'], next: '🔴', type: 'sequence' },
+        { seq: ['🔷', '🔶', '🔷', '🔷', '🔶'], next: '🔷', type: 'complex' },
+        { seq: ['❤️', '💙', '💚', '❤️', '💙'], next: '💚', type: 'three-cycle' },
+        { seq: ['🌟', '🌟', '🌟', '⭐', '🌟'], next: '🌟', type: 'mostly-same' },
+        { seq: ['🔺', '🔻', '🔺', '🔺', '🔻'], next: '🔺', type: 'complex-alt' },
+        { seq: ['🎵', '🎶', '🎵', '🎵', '🎶'], next: '🎵', type: 'music-pattern' }
+    ];
+    
+    function newPattern() {
+        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const display = pattern.seq.join(' ') + ' ?';
+        document.getElementById('pattern-display').textContent = display;
+        
+        // Create options
+        const allSymbols = Array.from(new Set(patterns.flatMap(p => p.seq)));
+        const options = [pattern.next];
+        while (options.length < 4) {
+            const random = allSymbols[Math.floor(Math.random() * allSymbols.length)];
+            if (!options.includes(random)) options.push(random);
+        }
+        options.sort(() => Math.random() - 0.5);
+        
+        const optionsDiv = document.getElementById('pattern-options');
+        optionsDiv.innerHTML = '';
+        
+        options.forEach((opt, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'answer-option';
+            btn.textContent = opt;
+            btn.style.fontSize = '64px';
+            btn.style.animation = `slideIn 0.3s ease-out ${i * 0.1}s both`;
+            btn.onclick = () => checkPattern(opt, pattern.next);
+            optionsDiv.appendChild(btn);
+        });
+    }
+    
+    function checkPattern(selected, correct) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === correct) {
+            score += 10;
+            streak++;
+            level = Math.floor(streak / 3) + 1;
+            document.getElementById('pattern-score').textContent = score;
+            document.getElementById('pattern-level').textContent = level;
+            document.getElementById('pattern-streak').textContent = streak;
+            SoundSystem.playSuccess();
+            setTimeout(newPattern, 1000);
+        } else {
+            streak = 0;
+            level = 1;
+            document.getElementById('pattern-streak').textContent = streak;
+            document.getElementById('pattern-level').textContent = level;
+            SoundSystem.playFailure();
+            setTimeout(newPattern, 1500);
+        }
+    }
+    
+    newPattern();
+}
+
+// 74. Multitasking Master
+function initMultitaskingMaster() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Multitasking Master</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Score:</span>
+                <span class="stat-value" id="multi-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Time:</span>
+                <span class="stat-value" id="multi-time">60</span>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+            <div style="border: 4px solid var(--border-primary); padding: 20px; background: var(--bg-secondary);">
+                <h3>Math Challenge</h3>
+                <div id="multi-math" style="font-size: 32px; margin: 10px 0;">5 + 3 = ?</div>
+                <input type="number" id="multi-math-input" style="width: 100%; font-size: 24px;">
+            </div>
+            <div style="border: 4px solid var(--border-primary); padding: 20px; background: var(--bg-secondary);">
+                <h3>Click Target</h3>
+                <div style="position: relative; height: 200px; background: #000;">
+                    <div id="multi-target" style="position: absolute; width: 40px; height: 40px; border-radius: 50%; background: #00ff00; cursor: pointer;"></div>
+                </div>
+            </div>
+        </div>
+        <div style="border: 4px solid var(--border-primary); padding: 20px; background: var(--bg-secondary);">
+            <h3>Type the Word</h3>
+            <div id="multi-word" style="font-size: 32px; margin: 10px 0;">keyboard</div>
+            <input type="text" id="multi-word-input" style="width: 100%; font-size: 24px;">
+        </div>
+    `;
+    
+    let score = 0;
+    let timeLeft = 60;
+    let currentMathAnswer = 0;
+    let currentWord = '';
+    
+    const words = ['code', 'type', 'fast', 'game', 'test', 'mind', 'task', 'play', 'work', 'busy'];
+    
+    function newMath() {
+        const a = Math.floor(Math.random() * 20) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        currentMathAnswer = a + b;
+        document.getElementById('multi-math').textContent = `${a} + ${b} = ?`;
+    }
+    
+    function newWord() {
+        currentWord = words[Math.floor(Math.random() * words.length)];
+        document.getElementById('multi-word').textContent = currentWord;
+    }
+    
+    function moveTarget() {
+        const target = document.getElementById('multi-target');
+        target.style.left = Math.random() * 360 + 'px';
+        target.style.top = Math.random() * 160 + 'px';
+    }
+    
+    document.getElementById('multi-math-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const guess = parseInt(e.target.value);
+            if (guess === currentMathAnswer) {
+                score += 5;
+                document.getElementById('multi-score').textContent = score;
+                SoundSystem.playClick();
+                newMath();
+                e.target.value = '';
+            }
+        }
+    });
+    
+    document.getElementById('multi-word-input').addEventListener('input', (e) => {
+        if (e.target.value === currentWord) {
+            score += 5;
+            document.getElementById('multi-score').textContent = score;
+            SoundSystem.playClick();
+            newWord();
+            e.target.value = '';
+        }
+    });
+    
+    document.getElementById('multi-target').onclick = function() {
+        score += 5;
+        document.getElementById('multi-score').textContent = score;
+        SoundSystem.playClick();
+        moveTarget();
+    };
+    
+    const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('multi-time').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            document.getElementById('multi-math-input').disabled = true;
+            document.getElementById('multi-word-input').disabled = true;
+            document.getElementById('multi-target').onclick = null;
+            SoundSystem.playSuccess();
+        }
+    }, 1000);
+    
+    newMath();
+    newWord();
+    moveTarget();
+}
+
+// 75. Perfect Pitch
+function initPerfectPitch() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Perfect Pitch Test</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="pitch-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="pitch-accuracy">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="pitch-round">0/15</span>
+            </div>
+        </div>
+        <div style="text-align: center; margin: 40px 0;">
+            <button id="pitch-play" onclick="playCurrentNote()" style="padding: 30px 60px; font-size: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; cursor: pointer; border-radius: 10px;">
+                🔊 PLAY NOTE
+            </button>
+        </div>
+        <div id="pitch-options" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; max-width: 600px; margin: 0 auto;"></div>
+        <div style="text-align: center; color: var(--text-secondary); font-size: 20px; margin-top: 20px;">
+            Listen to the note and identify it!
+        </div>
+    `;
+    
+    const notes = [
+        { name: 'C', freq: 261.63 },
+        { name: 'D', freq: 293.66 },
+        { name: 'E', freq: 329.63 },
+        { name: 'F', freq: 349.23 },
+        { name: 'G', freq: 392.00 },
+        { name: 'A', freq: 440.00 },
+        { name: 'B', freq: 493.88 },
+        { name: 'C♯', freq: 277.18 },
+        { name: 'D♯', freq: 311.13 },
+        { name: 'F♯', freq: 369.99 },
+        { name: 'G♯', freq: 415.30 },
+        { name: 'A♯', freq: 466.16 }
+    ];
+    
+    let score = 0;
+    let round = 0;
+    let hits = 0;
+    let currentNote = null;
+    
+    function playNote(freq) {
+        if (!SoundSystem.audioContext) return;
+        const osc = SoundSystem.audioContext.createOscillator();
+        const gain = SoundSystem.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(SoundSystem.audioContext.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, SoundSystem.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, SoundSystem.audioContext.currentTime + 1);
+        osc.start();
+        osc.stop(SoundSystem.audioContext.currentTime + 1);
+    }
+    
+    function newRound() {
+        if (round >= 15) {
+            document.getElementById('pitch-play').disabled = true;
+            document.getElementById('pitch-options').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; font-size: 48px; color: var(--text-accent);">
+                    Complete! Score: ${score}<br>Accuracy: ${((hits / round) * 100).toFixed(1)}%
+                </div>
+            `;
+            return;
+        }
+        
+        round++;
+        currentNote = notes[Math.floor(Math.random() * notes.length)];
+        document.getElementById('pitch-round').textContent = `${round}/15`;
+        
+        // Create options with current note and 3 random others
+        const options = [currentNote];
+        while (options.length < 4) {
+            const random = notes[Math.floor(Math.random() * notes.length)];
+            if (!options.find(n => n.name === random.name)) {
+                options.push(random);
+            }
+        }
+        options.sort(() => Math.random() - 0.5);
+        
+        const optionsDiv = document.getElementById('pitch-options');
+        optionsDiv.innerHTML = '';
+        
+        options.forEach((note, i) => {
+            const btn = document.createElement('div');
+            btn.className = 'answer-option';
+            btn.textContent = note.name;
+            btn.style.fontSize = '32px';
+            btn.style.padding = '30px';
+            btn.style.animation = `slideIn 0.3s ease-out ${i * 0.1}s both`;
+            btn.onclick = () => checkNote(note.name);
+            optionsDiv.appendChild(btn);
+        });
+    }
+    
+    window.playCurrentNote = function() {
+        if (currentNote) {
+            playNote(currentNote.freq);
+        }
+    };
+    
+    function checkNote(selected) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.onclick = null);
+        
+        if (selected === currentNote.name) {
+            score += 10;
+            hits++;
+            document.getElementById('pitch-score').textContent = score;
+            SoundSystem.playSuccess();
+            options.forEach(opt => {
+                if (opt.textContent === selected) opt.classList.add('correct');
+            });
+        } else {
+            SoundSystem.playFailure();
+            options.forEach(opt => {
+                if (opt.textContent === selected) opt.classList.add('incorrect');
+                if (opt.textContent === currentNote.name) opt.classList.add('correct');
+            });
+        }
+        
+        const accuracy = round > 0 ? (hits / round) * 100 : 100;
+        document.getElementById('pitch-accuracy').textContent = accuracy.toFixed(1) + '%';
+        
+        setTimeout(newRound, 1500);
     }
     
     newRound();
