@@ -1,6 +1,6 @@
 # NuwuBench
 
-A retro-styled human benchmark testing website featuring 60 interactive games to test various cognitive and motor skills.
+A retro-styled human benchmark testing website featuring 75 interactive games to test various cognitive and motor skills.
 
 ## Features
 
@@ -8,7 +8,7 @@ A retro-styled human benchmark testing website featuring 60 interactive games to
 - **Theme Switcher**: Toggle between dark mode (default) and light mode
 - **Auto-Start Games**: Games begin as soon as you start interacting - no START buttons needed!
 - **Restart Functionality**: Easily restart any game with the "Play Again" button
-- **60 Unique Tests**: Comprehensive collection of human capability benchmarks
+- **75 Unique Tests**: Comprehensive collection of human capability benchmarks
 - **Sound Effects**: Interactive audio feedback using Web Audio API
 - **Animations & Effects**: Confetti, shake effects, smooth transitions, and particle effects
 - **Fully Customizable**: Adjustable difficulty, duration, and settings for all tests
@@ -196,6 +196,51 @@ Match shapes with their rotated versions. Tests spatial awareness and visual pat
 
 ### 60. Quick Math Facts ⚡
 Rapid-fire basic arithmetic problems. Tests mental math speed and accuracy under time pressure.
+
+### 61. Typing Race 🏁
+Race against the clock typing words as fast as possible. Tests typing speed and accuracy under pressure.
+
+### 62. Number Prediction 🔮
+Predict the next number in mathematical sequences. Tests pattern recognition and mathematical reasoning.
+
+### 63. Focus Test 🎯
+Click target circles while ignoring distractors. Tests selective attention and focus under pressure.
+
+### 64. Grid Memory Advanced 🧠
+Remember increasingly complex grid patterns with time pressure. Advanced visual memory challenge.
+
+### 65. Quick Sort ⚡
+Sort numbers in ascending order as fast as possible. Tests speed, accuracy, and number recognition.
+
+### 66. Color Blind Test 🎨
+Identify hidden numbers in Ishihara-style color patterns. Tests color perception and visual discrimination.
+
+### 67. Peripheral Vision 👁️
+Detect objects appearing at screen edges while maintaining center focus. Tests peripheral awareness.
+
+### 68. Dual N-Back 🧠
+Advanced memory game with simultaneous visual and audio stimuli. Tests working memory capacity.
+
+### 69. Reflex Chain ⚡
+Click numbered targets in rapid sequence. Tests sequential processing speed and reflexes.
+
+### 70. Mental Rotation 🔄
+Determine if rotated shapes are identical or mirror images. Tests spatial visualization skills.
+
+### 71. Time Perception ⏱️
+Estimate time intervals without a clock. Tests internal time perception and temporal awareness.
+
+### 72. Blind Typing ⌨️
+Type text without seeing your input. Tests touch typing skills and muscle memory.
+
+### 73. Pattern Prediction 🔮
+Predict the next symbol in complex visual patterns. Tests pattern recognition and logical thinking.
+
+### 74. Multitasking Master 🎯
+Juggle multiple mini-games simultaneously. Tests divided attention and multitasking ability.
+
+### 75. Perfect Pitch 🎵
+Identify musical notes by ear using Web Audio API. Tests pitch recognition and musical ear training.
 
 ## How to Use
 
