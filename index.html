@@ -18,6 +18,16 @@
         </header>
 
         <main id="main-content">
+            <div id="score-panel" class="score-panel">
+                <div class="score-panel-header">
+                    <span>Session Score Tracker</span>
+                    <span class="score-panel-subtitle">Resets when you refresh</span>
+                </div>
+                <div id="score-active" class="score-active">No game running yet</div>
+                <div id="score-empty" class="score-empty">Play a game to start logging scores and see the live graph!</div>
+                <div id="score-list" class="score-list"></div>
+                <div id="score-graph" class="score-graph"></div>
+            </div>
             <div class="game-grid" id="game-menu">
                 <div class="game-card" onclick="loadGame('click-speed')">
                     <h3>Click Speed Test</h3>

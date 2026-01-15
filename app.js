@@ -156,6 +156,113 @@ const VisualEffects = {
     }
 };
 
+// Session Score Tracker (resets on page refresh)
+const ScoreTracker = {
+    entries: [],
+    MAX_ENTRIES: 40,
+    CONFETTI_Y: 120,
+    init() {
+        this.panel = document.getElementById('score-panel');
+        this.listEl = document.getElementById('score-list');
+        this.graphEl = document.getElementById('score-graph');
+        this.emptyEl = document.getElementById('score-empty');
+        this.activeEl = document.getElementById('score-active');
+        this.render();
+    },
+    pretty(name) {
+        return name ? name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : '';
+    },
+    setActive(gameName) {
+        if (!this.activeEl) return;
+        this.activeEl.textContent = gameName ? `Current game: ${this.pretty(gameName)}` : 'No game running yet';
+    },
+    collectStats() {
+        const statItems = Array.from(document.querySelectorAll('#game-container .game-stats .stat-item'));
+        return statItems.map(item => {
+            const label = item.querySelector('.stat-label')?.textContent.replace(':', '').trim() || 'Stat';
+            const value = item.querySelector('.stat-value')?.textContent.trim();
+            if (!value) return null;
+            return { label, value };
+        }).filter(Boolean);
+    },
+    capture(gameName) {
+        if (!gameName) return;
+        const stats = this.collectStats();
+        if (!stats.length) return;
+        this.entries.push({ game: gameName, stats, time: Date.now() });
+        if (this.entries.length > this.MAX_ENTRIES) this.entries.shift();
+        const numeric = this.getNumeric(stats);
+        if (numeric && !numeric.isTime && numeric.value > 0) {
+            VisualEffects.createConfetti(window.innerWidth / 2, this.CONFETTI_Y);
+        }
+        this.render();
+    },
+    getNumeric(stats) {
+        let fallback = null;
+        for (const stat of stats) {
+            const match = stat.value.match(/-?\d+(\.\d+)?/);
+            if (match) {
+                const val = parseFloat(match[0]);
+                if (!isNaN(val)) {
+                    const isTime = /time/i.test(stat.label);
+                    if (!isTime) return { value: val, label: stat.label, isTime };
+                    if (!fallback) fallback = { value: val, label: stat.label, isTime };
+                }
+            }
+        }
+        return fallback;
+    },
+    render() {
+        if (!this.panel || !this.listEl || !this.graphEl) return;
+        if (!this.entries.length) {
+            if (this.emptyEl) this.emptyEl.classList.remove('hidden');
+            this.listEl.innerHTML = '';
+            this.graphEl.innerHTML = `<div class="score-empty-graph">Scores will appear here once you finish a round.</div>`;
+            return;
+        }
+        if (this.emptyEl) this.emptyEl.classList.add('hidden');
+        const recent = this.entries.slice(-6).reverse();
+        this.listEl.innerHTML = recent.map(entry => {
+            const statsText = entry.stats.map(stat => `<div>${stat.label}: ${stat.value}</div>`).join('');
+            const time = new Date(entry.time).toLocaleTimeString();
+            return `
+                <div class="score-entry">
+                    <div class="score-entry-title">
+                        <span>${this.pretty(entry.game)}</span>
+                        <span class="score-entry-time">${time}</span>
+                    </div>
+                    <div class="score-entry-stats">${statsText}</div>
+                </div>
+            `;
+        }).join('');
+        this.renderGraph();
+    },
+    renderGraph() {
+        if (!this.graphEl) return;
+        const bars = this.entries.slice(-10).map(entry => {
+            const metric = this.getNumeric(entry.stats);
+            return metric ? { value: metric.value, game: entry.game } : null;
+        }).filter(Boolean);
+        if (!bars.length) {
+            this.graphEl.innerHTML = `<div class="score-empty-graph">Numeric scores will be graphed here.</div>`;
+            return;
+        }
+        const max = Math.max(...bars.map(b => b.value));
+        this.graphEl.innerHTML = '';
+        bars.forEach((barData, index) => {
+            const bar = document.createElement('div');
+            bar.className = `score-bar${index === bars.length - 1 ? ' bonus' : ''}`;
+            const height = max ? Math.max(8, (barData.value / max) * 100) : 10;
+            bar.style.height = `${height}%`;
+            bar.innerHTML = `
+                <span class="score-bar-value">${barData.value}</span>
+                <span class="score-bar-label">${this.pretty(barData.game)}</span>
+            `;
+            this.graphEl.appendChild(bar);
+        });
+    }
+};
+
 // Theme management
 function toggleTheme() {
     const body = document.body;
@@ -194,6 +301,8 @@ window.addEventListener('DOMContentLoaded', () => {
             SoundSystem.playHover();
         });
     });
+    
+    ScoreTracker.init();
 });
 
 // Game state management
@@ -203,7 +312,11 @@ let gameData = {};
 // Navigation
 function loadGame(gameName) {
     SoundSystem.playClick();
+    if (currentGame) {
+        ScoreTracker.capture(currentGame);
+    }
     currentGame = gameName;
+    ScoreTracker.setActive(gameName);
     document.getElementById('game-menu').classList.add('hidden');
     document.getElementById('game-container').classList.remove('hidden');
     document.getElementById('back-button').classList.remove('hidden');
@@ -294,8 +407,12 @@ function loadGame(gameName) {
 
 function backToMenu() {
     SoundSystem.playClick();
+    if (currentGame) {
+        ScoreTracker.capture(currentGame);
+    }
     currentGame = null;
     gameData = {};
+    ScoreTracker.setActive(null);
     document.getElementById('game-menu').classList.remove('hidden');
     document.getElementById('game-container').classList.add('hidden');
     document.getElementById('back-button').classList.add('hidden');
@@ -305,6 +422,7 @@ function backToMenu() {
 function restartGame() {
     SoundSystem.playClick();
     if (currentGame) {
+        ScoreTracker.capture(currentGame);
         loadGame(currentGame);
     }
 }
@@ -815,17 +933,19 @@ function initMemory() {
     `;
     
     const grid = document.getElementById('memory-grid');
+    const memoryContainer = container;
     let started = false;
+    const START_BLOCKERS = '.setting-item, select';
     
-    const startHandler = () => {
-        if (!started) {
-            started = true;
-            document.getElementById('memory-message').textContent = '';
-            document.removeEventListener('click', startHandler);
-            startMemory();
-        }
+    const startHandler = (event) => {
+        if (started) return;
+        if (event.target.closest(START_BLOCKERS)) return;
+        started = true;
+        document.getElementById('memory-message').textContent = '';
+        memoryContainer.removeEventListener('click', startHandler);
+        startMemory();
     };
-    document.addEventListener('click', startHandler);
+    memoryContainer.addEventListener('click', startHandler);
 }
 
 function startMemory() {
@@ -2724,17 +2844,28 @@ function initMultiTask() {
         
         const target = document.createElement('div');
         target.className = 'circle-target';
+        const isBonus = Math.random() < 0.2;
+        if (isBonus) target.classList.add('bonus');
         target.style.width = '60px';
         target.style.height = '60px';
         target.style.left = Math.random() * (area.clientWidth - 60) + 'px';
         target.style.top = Math.random() * (area.clientHeight - 60) + 'px';
         area.appendChild(target);
         
-        target.onclick = () => {
-            clicks++;
+        target.onmousedown = (e) => {
+            // Keep text input focus while clicking targets
+            e.preventDefault();
+        };
+        target.onclick = (e) => {
+            const increment = isBonus ? 2 : 1;
+            clicks += increment;
             document.getElementById('multi-clicks').textContent = clicks;
+            if (isBonus) {
+                VisualEffects.createConfetti(e.clientX, e.clientY);
+            }
             target.remove();
             targetCount--;
+            input.focus();
         };
         
         targetCount++;
@@ -2755,6 +2886,10 @@ function initMultiTask() {
         }
     });
     
+    input.addEventListener('blur', () => {
+        if (!input.disabled) input.focus();
+    });
+    
     const spawnInterval = setInterval(() => {
         if (timeLeft > 0 && targetCount < 3) {
             spawnTarget();
@@ -2771,6 +2906,7 @@ function initMultiTask() {
             area.innerHTML = `<div style="text-align: center; padding-top: 100px; font-size: 32px;">
                 Test Complete!<br>Clicks: ${clicks}<br>Characters Typed: ${document.getElementById('multi-typed').textContent}
             </div>`;
+            ScoreTracker.capture('multi-task');
         }
     }, 1000);
     
