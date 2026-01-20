@@ -402,6 +402,9 @@ function loadGame(gameName) {
         case 'pattern-prediction': initPatternPrediction(); break;
         case 'multitasking-master': initMultitaskingMaster(); break;
         case 'perfect-pitch': initPerfectPitch(); break;
+        case 'perfect-tone': initPerfectTone(); break;
+        case 'color-spectrum': initColorSpectrum(); break;
+        case 'hexcode-guess': initHexcodeGuess(); break;
     }
 }
 
@@ -8030,5 +8033,278 @@ function initPerfectPitch() {
         setTimeout(newRound, 1500);
     }
     
+    newRound();
+}
+
+// 76. Perfect Tone Match
+function initPerfectTone() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Perfect Tone Match</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="tone-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Accuracy:</span>
+                <span class="stat-value" id="tone-accuracy">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="tone-round">0/10</span>
+            </div>
+        </div>
+        <div style="text-align:center; margin: 30px 0;">
+            <button onclick="playToneTarget()" style="padding: 20px 40px; font-size: 28px;">🔊 Play Target Tone</button>
+        </div>
+        <div class="settings-panel" style="text-align:center;">
+            <div class="setting-item" style="justify-content:center;">
+                <span class="setting-label">Adjust Frequency:</span>
+                <input type="range" id="tone-slider" min="200" max="1200" value="440" step="1" style="width:60%;">
+                <span class="stat-value" id="tone-current">440 Hz</span>
+            </div>
+            <button onclick="submitToneGuess()">SUBMIT GUESS</button>
+        </div>
+        <div id="tone-feedback" class="results" style="display:none;">
+            <h3>Feedback</h3>
+            <div id="tone-diff" class="score" style="font-size:48px;"></div>
+            <p id="tone-message" style="color:var(--text-secondary);"></p>
+        </div>
+    `;
+
+    const target = { freq: 440 };
+    let round = 0;
+    let score = 0;
+    let hits = 0;
+
+    function newRound() {
+        if (round >= 10) {
+            document.getElementById('tone-feedback').style.display = 'block';
+            document.getElementById('tone-diff').textContent = `Final Score: ${score}`;
+            document.getElementById('tone-message').textContent = `Accuracy: ${((hits / round) * 100).toFixed(1)}%`;
+            document.querySelector('.settings-panel button').disabled = true;
+            return;
+        }
+        round++;
+        target.freq = 200 + Math.random() * 1000; // 200-1200 Hz to match slider range
+        document.getElementById('tone-round').textContent = `${round}/10`;
+    }
+
+    window.playToneTarget = function() {
+        if (!SoundSystem.audioContext) return;
+        const osc = SoundSystem.audioContext.createOscillator();
+        const gain = SoundSystem.audioContext.createGain();
+        osc.frequency.value = target.freq;
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(SoundSystem.audioContext.destination);
+        gain.gain.setValueAtTime(0.25, SoundSystem.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, SoundSystem.audioContext.currentTime + 1.2);
+        osc.start();
+        osc.stop(SoundSystem.audioContext.currentTime + 1.2);
+    };
+
+    const slider = document.getElementById('tone-slider');
+    slider.oninput = () => {
+        document.getElementById('tone-current').textContent = `${slider.value} Hz`;
+        // optional preview tone quietly
+        if (!SoundSystem.audioContext) return;
+        const osc = SoundSystem.audioContext.createOscillator();
+        const gain = SoundSystem.audioContext.createGain();
+        osc.frequency.value = slider.value;
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(SoundSystem.audioContext.destination);
+        gain.gain.setValueAtTime(0.05, SoundSystem.audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, SoundSystem.audioContext.currentTime + 0.3);
+        osc.start();
+        osc.stop(SoundSystem.audioContext.currentTime + 0.3);
+    };
+
+    window.submitToneGuess = function() {
+        const guess = parseFloat(slider.value);
+        const diff = Math.abs(guess - target.freq);
+        const accuracy = Math.max(0, 100 - (diff / target.freq) * 100);
+        if (accuracy >= 80) hits++;
+        score += Math.round(accuracy);
+        document.getElementById('tone-score').textContent = score;
+        document.getElementById('tone-accuracy').textContent = ((hits / round) * 100).toFixed(1) + '%';
+        document.getElementById('tone-feedback').style.display = 'block';
+        document.getElementById('tone-diff').textContent = `${diff.toFixed(1)} Hz off`;
+        document.getElementById('tone-message').textContent = `Target: ${target.freq.toFixed(1)} Hz | Your guess: ${guess.toFixed(1)} Hz`;
+        newRound();
+    };
+
+    newRound();
+}
+
+// 77. Color Spectrum Alignment
+function initColorSpectrum() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Color Spectrum</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="spectrum-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="spectrum-round">0/10</span>
+            </div>
+        </div>
+        <div style="text-align:center; margin:20px 0;">
+            <div id="spectrum-target" style="width:160px; height:160px; margin:0 auto 20px; border:4px solid var(--border-primary);"></div>
+            <div id="spectrum-preview" style="width:160px; height:160px; margin:0 auto; border:4px solid var(--border-secondary);"></div>
+        </div>
+        <div class="settings-panel" style="text-align:center;">
+            <div class="setting-item" style="flex-direction:column; gap:6px;">
+                <span class="setting-label">Adjust Hue</span>
+                <input type="range" id="spectrum-slider" min="0" max="360" value="180" style="width:70%;">
+                <span class="stat-value" id="spectrum-hue">180°</span>
+            </div>
+            <button onclick="submitSpectrumGuess()">SUBMIT</button>
+        </div>
+        <div id="spectrum-feedback" class="results" style="display:none;">
+            <h3>Feedback</h3>
+            <div id="spectrum-diff" class="score" style="font-size:48px;"></div>
+            <p id="spectrum-message" style="color:var(--text-secondary);"></p>
+        </div>
+    `;
+
+    const target = { hue: 180 };
+    let round = 0;
+    let score = 0;
+
+    function setColors(hue) {
+        document.getElementById('spectrum-preview').style.backgroundColor = `hsl(${hue}, 80%, 50%)`;
+        document.getElementById('spectrum-hue').textContent = `${Math.round(hue)}°`;
+    }
+
+    const slider = document.getElementById('spectrum-slider');
+    slider.oninput = () => setColors(slider.value);
+
+    function newRound() {
+        if (round >= 10) {
+            document.getElementById('spectrum-feedback').style.display = 'block';
+            document.getElementById('spectrum-diff').textContent = `Final Score: ${score}`;
+            document.getElementById('spectrum-message').textContent = 'Great job aligning hues!';
+            document.querySelector('.settings-panel button').disabled = true;
+            return;
+        }
+        round++;
+        target.hue = Math.random() * 360;
+        document.getElementById('spectrum-target').style.backgroundColor = `hsl(${target.hue}, 80%, 50%)`;
+        document.getElementById('spectrum-round').textContent = `${round}/10`;
+        slider.value = Math.floor(Math.random() * 360);
+        setColors(slider.value);
+    }
+
+    window.submitSpectrumGuess = function() {
+        const guess = parseFloat(slider.value);
+        const rawDiff = Math.abs(guess - target.hue) % 360;
+        const diff = Math.min(rawDiff, 360 - rawDiff);
+        const accuracy = Math.max(0, 100 - (diff / 180) * 100);
+        score += Math.round(accuracy);
+        document.getElementById('spectrum-score').textContent = score;
+        document.getElementById('spectrum-feedback').style.display = 'block';
+        document.getElementById('spectrum-diff').textContent = `${diff.toFixed(1)}° off`;
+        document.getElementById('spectrum-message').textContent = `Target: ${target.hue.toFixed(1)}° | Your guess: ${guess.toFixed(1)}°`;
+        newRound();
+    };
+
+    newRound();
+}
+
+// 78. Hexcode Guess
+function initHexcodeGuess() {
+    const container = document.getElementById('game-container');
+    container.innerHTML = `
+        <h2 class="game-title">Hexcode Guess</h2>
+        <div class="game-stats">
+            <div class="stat-item">
+                <span class="stat-label">Score:</span>
+                <span class="stat-value" id="hex-score">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Round:</span>
+                <span class="stat-value" id="hex-round">0/10</span>
+            </div>
+        </div>
+        <div style="text-align:center; margin:20px 0;">
+            <div id="hex-target" style="width:200px; height:200px; margin:0 auto; border:4px solid var(--border-primary);"></div>
+        </div>
+        <div class="settings-panel" style="text-align:center;">
+            <input id="hex-input" type="text" placeholder="#rrggbb" maxlength="7" style="width:200px; text-transform:uppercase;">
+            <button onclick="submitHexGuess()">SUBMIT</button>
+        </div>
+        <div id="hex-feedback" class="results" style="display:none;">
+            <h3>Feedback</h3>
+            <div id="hex-diff" class="score" style="font-size:48px;"></div>
+            <p id="hex-message" style="color:var(--text-secondary);"></p>
+        </div>
+    `;
+
+    let round = 0;
+    let score = 0;
+    const target = { hex: '#abcdef' };
+
+    const HEX_PATTERN = /^#([A-Fa-f0-9]{6})$/;
+    const MAX_COLOR_DISTANCE = Math.sqrt((255 ** 2) * 3); // max Euclidean distance in RGB
+
+    function randomHex() {
+        const v = Math.floor(Math.random() * 0xffffff);
+        return '#' + v.toString(16).padStart(6, '0');
+    }
+
+    function hexToRgb(hex) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return m ? {
+            r: parseInt(m[1], 16),
+            g: parseInt(m[2], 16),
+            b: parseInt(m[3], 16)
+        } : null;
+    }
+
+    function colorDiff(a, b) {
+        return Math.sqrt((a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2);
+    }
+
+    function newRound() {
+        if (round >= 10) {
+            document.getElementById('hex-feedback').style.display = 'block';
+            document.getElementById('hex-diff').textContent = `Final Score: ${score}`;
+            document.getElementById('hex-message').textContent = 'Nicely done guessing hex codes!';
+            document.querySelector('.settings-panel button').disabled = true;
+            return;
+        }
+        round++;
+        target.hex = randomHex();
+        document.getElementById('hex-target').style.backgroundColor = target.hex;
+        document.getElementById('hex-round').textContent = `${round}/10`;
+        document.getElementById('hex-input').value = '';
+    }
+
+    window.submitHexGuess = function() {
+        let guess = document.getElementById('hex-input').value.trim();
+        if (!guess.startsWith('#')) guess = '#' + guess;
+        if (!HEX_PATTERN.test(guess)) {
+            VisualEffects.shakeElement(document.getElementById('hex-input'));
+            return;
+        }
+        const targetRgb = hexToRgb(target.hex);
+        const guessRgb = hexToRgb(guess);
+        if (!targetRgb || !guessRgb) return;
+        const diff = colorDiff(targetRgb, guessRgb);
+        const accuracy = Math.max(0, 100 - (diff / MAX_COLOR_DISTANCE) * 100);
+        score += Math.round(accuracy);
+        document.getElementById('hex-score').textContent = score;
+        document.getElementById('hex-feedback').style.display = 'block';
+        document.getElementById('hex-diff').textContent = `${diff.toFixed(1)} distance`;
+        document.getElementById('hex-message').textContent = `Target: ${target.hex.toUpperCase()} | Your guess: ${guess.toUpperCase()}`;
+        newRound();
+    };
+
     newRound();
 }
