@@ -8087,7 +8087,7 @@ function initPerfectTone() {
             return;
         }
         round++;
-        target.freq = 220 + Math.random() * 880; // 220-1100 Hz
+        target.freq = 200 + Math.random() * 1000; // 200-1200 Hz to match slider range
         document.getElementById('tone-round').textContent = `${round}/10`;
     }
 
@@ -8203,7 +8203,8 @@ function initColorSpectrum() {
 
     window.submitSpectrumGuess = function() {
         const guess = parseFloat(slider.value);
-        const diff = Math.min(Math.abs(guess - target.hue), 360 - Math.abs(guess - target.hue));
+        const rawDiff = Math.abs(guess - target.hue) % 360;
+        const diff = Math.min(rawDiff, 360 - rawDiff);
         const accuracy = Math.max(0, 100 - (diff / 180) * 100);
         score += Math.round(accuracy);
         document.getElementById('spectrum-score').textContent = score;
@@ -8249,6 +8250,9 @@ function initHexcodeGuess() {
     let score = 0;
     const target = { hex: '#abcdef' };
 
+    const HEX_PATTERN = /^#([A-Fa-f0-9]{6})$/;
+    const MAX_COLOR_DISTANCE = Math.sqrt((255 ** 2) * 3); // max Euclidean distance in RGB
+
     function randomHex() {
         const v = Math.floor(Math.random() * 0xffffff);
         return '#' + v.toString(16).padStart(6, '0');
@@ -8285,7 +8289,7 @@ function initHexcodeGuess() {
     window.submitHexGuess = function() {
         let guess = document.getElementById('hex-input').value.trim();
         if (!guess.startsWith('#')) guess = '#' + guess;
-        if (!/^#([A-Fa-f0-9]{6})$/.test(guess)) {
+        if (!HEX_PATTERN.test(guess)) {
             VisualEffects.shakeElement(document.getElementById('hex-input'));
             return;
         }
@@ -8293,8 +8297,7 @@ function initHexcodeGuess() {
         const guessRgb = hexToRgb(guess);
         if (!targetRgb || !guessRgb) return;
         const diff = colorDiff(targetRgb, guessRgb);
-        const maxDiff = Math.sqrt((255 ** 2) * 3);
-        const accuracy = Math.max(0, 100 - (diff / maxDiff) * 100);
+        const accuracy = Math.max(0, 100 - (diff / MAX_COLOR_DISTANCE) * 100);
         score += Math.round(accuracy);
         document.getElementById('hex-score').textContent = score;
         document.getElementById('hex-feedback').style.display = 'block';
