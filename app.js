@@ -84,6 +84,21 @@ const SoundSystem = {
         gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + 0.05);
+    },
+
+    playRetroClick() {
+        if (!this.enabled || !this.audioContext) return;
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        oscillator.frequency.setValueAtTime(1400, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(180, this.audioContext.currentTime + 0.06);
+        oscillator.type = 'square';
+        gainNode.gain.setValueAtTime(0.25, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.07);
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.07);
     }
 };
 
@@ -252,8 +267,8 @@ const ScoreTracker = {
         bars.forEach((barData, index) => {
             const bar = document.createElement('div');
             bar.className = `score-bar${index === bars.length - 1 ? ' bonus' : ''}`;
-            const height = max ? Math.max(8, (barData.value / max) * 100) : 10;
-            bar.style.height = `${height}%`;
+            const height = max ? Math.max(8, Math.round((barData.value / max) * 100)) : 10;
+            bar.style.height = `${height}px`;
             bar.innerHTML = `
                 <span class="score-bar-value">${barData.value}</span>
                 <span class="score-bar-label">${this.pretty(barData.game)}</span>
@@ -431,6 +446,24 @@ function restartGame() {
 }
 
 // 1. Click Speed Test
+const CLICK_RIPPLE_DURATION_MS = 1000; // matches CSS animation duration
+const CLICK_RIPPLE_RING_DELAY_MS = 150; // delay between the two ripple rings
+
+function createClickRipple(container, x, y) {
+    const rippleColors = ['var(--text-accent)', 'var(--color-cyan)', 'var(--color-purple)', 'var(--color-pink)', 'var(--color-yellow)'];
+    const color = rippleColors[Math.floor(Math.random() * rippleColors.length)];
+    for (let i = 0; i < 2; i++) {
+        const ripple = document.createElement('div');
+        ripple.className = 'click-ripple';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.style.borderColor = color;
+        ripple.style.animationDelay = (i * CLICK_RIPPLE_RING_DELAY_MS / 1000) + 's';
+        container.appendChild(ripple);
+        setTimeout(() => ripple.remove(), CLICK_RIPPLE_DURATION_MS + 100 + i * CLICK_RIPPLE_RING_DELAY_MS);
+    }
+}
+
 function initClickSpeed() {
     const container = document.getElementById('game-container');
     container.innerHTML = `
@@ -472,13 +505,12 @@ function initClickSpeed() {
     loadClickRecords();
     
     const clickArea = document.getElementById('click-area');
-    let testStarted = false;
     
-    clickArea.onclick = () => {
-        if (!testStarted) {
-            testStarted = true;
-            startClickTest();
-        }
+    clickArea.onclick = (e) => {
+        const rect = clickArea.getBoundingClientRect();
+        createClickRipple(clickArea, e.clientX - rect.left, e.clientY - rect.top);
+        SoundSystem.playRetroClick();
+        startClickTest();
     };
 }
 
@@ -503,15 +535,23 @@ function startClickTest() {
         
         if (elapsed >= duration) {
             clearInterval(interval);
-            clickArea.onclick = null;
             clickArea.style.backgroundColor = 'var(--bg-secondary)';
-            clickArea.textContent = `Test Complete! ${clicks} clicks in ${duration}s (${cps} CPS)`;
+            clickArea.textContent = `Done! ${clicks} clicks (${cps} CPS) — Click to play again!`;
             saveClickRecord(duration, clicks, parseFloat(cps));
             loadClickRecords();
+            clickArea.onclick = (e) => {
+                const rect = clickArea.getBoundingClientRect();
+                createClickRipple(clickArea, e.clientX - rect.left, e.clientY - rect.top);
+                SoundSystem.playRetroClick();
+                startClickTest();
+            };
         }
     }
     
-    clickArea.onclick = () => {
+    clickArea.onclick = (e) => {
+        const rect = clickArea.getBoundingClientRect();
+        createClickRipple(clickArea, e.clientX - rect.left, e.clientY - rect.top);
+        SoundSystem.playRetroClick();
         clicks++;
         updateStats();
     };
