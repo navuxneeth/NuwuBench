@@ -1,0 +1,31 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          test -f index.html || (echo "index.html not found" && exit 1)
+          test -f app.js    || (echo "app.js not found"    && exit 1)
+          test -f styles.css || (echo "styles.css not found" && exit 1)
+          echo "All required files are present."
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check JavaScript syntax
+        run: node --check app.js && echo "JavaScript syntax is valid."
