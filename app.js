@@ -735,26 +735,26 @@ function initClickSpeed() {
 }
 
 function startClickTest() {
-    const duration = parseInt(document.getElementById('click-duration').value);
+    const duration = Utils.input.parseInt(document.getElementById('click-duration').value, 10);
     const clickArea = document.getElementById('click-area');
     let clicks = 0;
     let startTime = Date.now();
     let interval;
-    
+
     clickArea.textContent = 'CLICK NOW!';
     clickArea.style.backgroundColor = 'var(--bg-tertiary)';
-    
+
     function updateStats() {
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
         const timeLeft = Math.max(0, duration - elapsed);
         const cps = elapsed > 0 ? (clicks / elapsed).toFixed(2) : 0;
-        
+
         document.getElementById('click-count').textContent = clicks;
         document.getElementById('cps').textContent = cps;
         document.getElementById('time-left').textContent = timeLeft.toFixed(1);
-        
+
         if (elapsed >= duration) {
-            clearInterval(interval);
+            Utils.timers.clearInterval(interval);
             clickArea.style.backgroundColor = 'var(--bg-secondary)';
             clickArea.textContent = `Done! ${clicks} clicks (${cps} CPS) — Click to play again!`;
             saveClickRecord(duration, clicks, parseFloat(cps));
@@ -767,7 +767,7 @@ function startClickTest() {
             };
         }
     }
-    
+
     clickArea.onclick = (e) => {
         const rect = clickArea.getBoundingClientRect();
         createClickRipple(clickArea, e.clientX - rect.left, e.clientY - rect.top);
@@ -775,30 +775,30 @@ function startClickTest() {
         clicks++;
         updateStats();
     };
-    
-    interval = setInterval(updateStats, 50);
+
+    interval = Utils.timers.setInterval(updateStats, 50);
     updateStats();
 }
 
 function saveClickRecord(duration, clicks, cps) {
-    let records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    let records = Utils.storage.get('clickRecords', []);
     records.push({ duration, clicks, cps, date: new Date().toISOString() });
     records.sort((a, b) => b.cps - a.cps);
     records = records.slice(0, 10);
-    localStorage.setItem('clickRecords', JSON.stringify(records));
+    Utils.storage.set('clickRecords', records);
 }
 
 function loadClickRecords() {
-    const records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    const records = Utils.storage.get('clickRecords', []);
     const container = document.getElementById('click-records');
     const leaderboard = document.getElementById('click-leaderboard');
-    
+
     if (records.length > 0) {
         leaderboard.style.display = 'block';
         container.innerHTML = records.map((r, i) => `
             <div class="leaderboard-entry">
-                <span class="rank">#${i + 1} - ${r.duration}s</span>
-                <span class="score-display">${r.clicks} clicks (${r.cps.toFixed(2)} CPS)</span>
+                <span class="rank">#${i + 1} - ${Utils.input.sanitizeHTML(r.duration + 's')}</span>
+                <span class="score-display">${Utils.input.sanitizeHTML(r.clicks + '')} clicks (${Utils.input.sanitizeHTML(r.cps.toFixed(2))} CPS)</span>
             </div>
         `).join('');
     }
@@ -1328,12 +1328,15 @@ function initMath() {
         <div style="text-align: center; margin: 20px 0;">
             <input type="number" id="math-answer" placeholder="Type answer to start" style="width: 200px; font-size: 32px; text-align: center;">
         </div>
-        <button id="math-submit" onclick="submitMathAnswer()" style="display: none;">SUBMIT</button>
+        <button id="math-submit" class="button" style="display: none;">SUBMIT</button>
     `;
-    
+
     const input = document.getElementById('math-answer');
     let started = false;
-    
+
+    // Remove inline onclick handler - will be set up in startMathTest
+    document.getElementById('math-submit').onclick = null;
+
     input.addEventListener('input', () => {
         if (!started && input.value) {
             started = true;
@@ -1343,26 +1346,30 @@ function initMath() {
 }
 
 function startMathTest() {
-    const difficulty = document.getElementById('math-difficulty').value;
-    const timeLimit = parseInt(document.getElementById('math-time').value);
+    const difficulty = Utils.input.validateOption(
+        document.getElementById('math-difficulty').value,
+        ['easy', 'medium', 'hard'],
+        'medium'
+    );
+    const timeLimit = Utils.input.parseInt(document.getElementById('math-time').value, 60);
     let score = 0;
     let startTime = Date.now();
     let currentAnswer;
-    
+
     document.getElementById('math-submit').style.display = 'inline-block';
-    
+
     function generateQuestion() {
         const elapsed = (Date.now() - startTime) / 1000;
         const timeLeft = Math.max(0, timeLimit - elapsed);
         document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
-        
+
         if (timeLeft <= 0) {
             document.getElementById('math-question').textContent = `Time's up! Final Score: ${score}`;
             document.getElementById('math-answer').disabled = true;
             document.getElementById('math-submit').style.display = 'none';
             return;
         }
-        
+
         let a, b, op, question;
         if (difficulty === 'easy') {
             a = Math.floor(Math.random() * 20) + 1;
@@ -1377,7 +1384,7 @@ function startMathTest() {
             b = Math.floor(Math.random() * 100) + 20;
             op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
         }
-        
+
         if (op === '+') currentAnswer = a + b;
         else if (op === '-') currentAnswer = a - b;
         else if (op === '*') currentAnswer = a * b;
@@ -1385,33 +1392,40 @@ function startMathTest() {
             currentAnswer = Math.floor(a / b);
             question = `${a} ${op} ${b} (round down)`;
         }
-        
+
         if (!question) question = `${a} ${op} ${b}`;
         document.getElementById('math-question').textContent = question + ' = ?';
         document.getElementById('math-answer').value = '';
         document.getElementById('math-answer').focus();
     }
-    
-    window.submitMathAnswer = function() {
-        const userAnswer = parseInt(document.getElementById('math-answer').value);
-        if (userAnswer === currentAnswer) {
+
+    const submitAnswer = function() {
+        const userAnswer = Utils.input.parseInt(document.getElementById('math-answer').value, NaN);
+        // Only accept valid numbers
+        if (!isNaN(userAnswer) && userAnswer === currentAnswer) {
             score++;
             document.getElementById('math-score').textContent = score;
+            SoundSystem.playSuccess();
+        } else if (!isNaN(userAnswer)) {
+            SoundSystem.playFailure();
         }
         generateQuestion();
     };
-    
+
+    // Replace window assignment with direct event listener
+    document.getElementById('math-submit').onclick = submitAnswer;
+
     document.getElementById('math-answer').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') submitMathAnswer();
+        if (e.key === 'Enter') submitAnswer();
     });
-    
-    const timerInterval = setInterval(() => {
+
+    const timerInterval = Utils.timers.setInterval(() => {
         const elapsed = (Date.now() - startTime) / 1000;
         const timeLeft = Math.max(0, timeLimit - elapsed);
         document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
-        if (timeLeft <= 0) clearInterval(timerInterval);
+        if (timeLeft <= 0) Utils.timers.clearInterval(timerInterval);
     }, 100);
-    
+
     generateQuestion();
 }
 
