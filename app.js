@@ -171,6 +171,191 @@ const VisualEffects = {
     }
 };
 
+// Utility Functions for Security, Performance, and Accessibility
+const Utils = {
+    // Timer management to prevent memory leaks
+    timers: {
+        intervals: new Set(),
+        timeouts: new Set(),
+
+        setInterval(callback, delay) {
+            const id = setInterval(callback, delay);
+            this.intervals.add(id);
+            return id;
+        },
+
+        setTimeout(callback, delay) {
+            const id = setTimeout(() => {
+                callback();
+                this.timeouts.delete(id);
+            }, delay);
+            this.timeouts.add(id);
+            return id;
+        },
+
+        clearInterval(id) {
+            clearInterval(id);
+            this.intervals.delete(id);
+        },
+
+        clearTimeout(id) {
+            clearTimeout(id);
+            this.timeouts.delete(id);
+        },
+
+        clearAll() {
+            this.intervals.forEach(id => clearInterval(id));
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.intervals.clear();
+            this.timeouts.clear();
+        }
+    },
+
+    // Safe localStorage operations with error handling
+    storage: {
+        get(key, defaultValue = null) {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch (e) {
+                console.warn(`Failed to read from localStorage: ${key}`, e);
+                return defaultValue;
+            }
+        },
+
+        set(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (e) {
+                console.warn(`Failed to write to localStorage: ${key}`, e);
+                return false;
+            }
+        },
+
+        remove(key) {
+            try {
+                localStorage.removeItem(key);
+                return true;
+            } catch (e) {
+                console.warn(`Failed to remove from localStorage: ${key}`, e);
+                return false;
+            }
+        }
+    },
+
+    // Input validation and sanitization
+    input: {
+        parseInt(value, defaultValue = 0) {
+            const parsed = parseInt(value);
+            return isNaN(parsed) ? defaultValue : parsed;
+        },
+
+        parseFloat(value, defaultValue = 0) {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? defaultValue : parsed;
+        },
+
+        sanitizeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        },
+
+        validateOption(value, validOptions, defaultValue) {
+            return validOptions.includes(value) ? value : defaultValue;
+        }
+    },
+
+    // Safe DOM manipulation
+    dom: {
+        createElement(tag, options = {}) {
+            const element = document.createElement(tag);
+            if (options.className) element.className = options.className;
+            if (options.id) element.id = options.id;
+            if (options.textContent) element.textContent = options.textContent;
+            if (options.innerHTML) element.innerHTML = options.innerHTML;
+            if (options.attributes) {
+                Object.entries(options.attributes).forEach(([key, value]) => {
+                    element.setAttribute(key, value);
+                });
+            }
+            if (options.onClick) {
+                element.addEventListener('click', options.onClick);
+            }
+            return element;
+        },
+
+        getElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`Element not found: ${id}`);
+            }
+            return element;
+        },
+
+        setTextContent(id, text) {
+            const element = this.getElement(id);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+    },
+
+    // Accessibility helpers
+    a11y: {
+        setAriaLabel(element, label) {
+            if (element) element.setAttribute('aria-label', label);
+        },
+
+        setAriaLive(element, value = 'polite') {
+            if (element) element.setAttribute('aria-live', value);
+        },
+
+        setRole(element, role) {
+            if (element) element.setAttribute('role', role);
+        },
+
+        setTabIndex(element, index = 0) {
+            if (element) element.setAttribute('tabindex', index);
+        },
+
+        announce(message) {
+            // Create an off-screen element for screen reader announcements
+            const announcer = document.createElement('div');
+            announcer.setAttribute('role', 'status');
+            announcer.setAttribute('aria-live', 'polite');
+            announcer.className = 'sr-only';
+            announcer.textContent = message;
+            document.body.appendChild(announcer);
+            setTimeout(() => announcer.remove(), 1000);
+        }
+    },
+
+    // Animation helpers with reduced motion support
+    animation: {
+        prefersReducedMotion() {
+            return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        },
+
+        animate(element, animationName, duration = 500) {
+            if (this.prefersReducedMotion()) return;
+            element.style.animation = `${animationName} ${duration}ms`;
+            setTimeout(() => {
+                element.style.animation = '';
+            }, duration);
+        },
+
+        createConfetti(x, y) {
+            if (this.prefersReducedMotion()) {
+                // Skip confetti animation for users who prefer reduced motion
+                return;
+            }
+            VisualEffects.createConfetti(x, y);
+        }
+    }
+};
+
 // Session Score Tracker (resets on page refresh)
 const ScoreTracker = {
     entries: [],
@@ -282,41 +467,64 @@ const ScoreTracker = {
 function toggleTheme() {
     const body = document.body;
     const button = document.getElementById('theme-toggle');
-    
+
     SoundSystem.playClick();
-    
+
     if (body.classList.contains('light-theme')) {
         body.classList.remove('light-theme');
         button.textContent = '☀️ Light Mode';
-        localStorage.setItem('theme', 'dark');
+        Utils.storage.set('theme', 'dark');
     } else {
         body.classList.add('light-theme');
         button.textContent = '🌙 Dark Mode';
-        localStorage.setItem('theme', 'light');
+        Utils.storage.set('theme', 'light');
     }
 }
 
 // Load saved theme on page load
 window.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme');
+    const savedTheme = Utils.storage.get('theme', 'dark');
     const body = document.body;
     const button = document.getElementById('theme-toggle');
-    
+
     if (savedTheme === 'light') {
         body.classList.add('light-theme');
         button.textContent = '🌙 Dark Mode';
     }
-    
+
     // Initialize sound system
     SoundSystem.init();
-    
-    // Add hover sounds to game cards
+
+    // Add accessibility and keyboard navigation to game cards
     document.querySelectorAll('.game-card').forEach(card => {
+        // Add ARIA attributes
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        // Get game name from onclick attribute
+        const onclickAttr = card.getAttribute('onclick');
+        const gameNameMatch = onclickAttr && onclickAttr.match(/loadGame\('([^']+)'\)/);
+        const gameName = gameNameMatch ? gameNameMatch[1] : '';
+        const gameTitle = card.querySelector('h3')?.textContent || 'Game';
+
+        card.setAttribute('aria-label', `Play ${gameTitle}`);
+
+        // Add hover sounds
         card.addEventListener('mouseenter', () => {
             SoundSystem.playHover();
         });
+
+        // Add keyboard navigation support
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (gameName) {
+                    loadGame(gameName);
+                }
+            }
+        });
     });
-    
+
     ScoreTracker.init();
 });
 
@@ -327,6 +535,10 @@ let gameData = {};
 // Navigation
 function loadGame(gameName) {
     SoundSystem.playClick();
+
+    // Clean up all timers from previous game to prevent memory leaks
+    Utils.timers.clearAll();
+
     if (currentGame) {
         ScoreTracker.capture(currentGame);
     }
@@ -336,11 +548,15 @@ function loadGame(gameName) {
     document.getElementById('game-container').classList.remove('hidden');
     document.getElementById('back-button').classList.remove('hidden');
     document.getElementById('restart-button').classList.remove('hidden');
-    
+
     const container = document.getElementById('game-container');
     container.innerHTML = '';
-    container.style.animation = 'slideIn 0.3s ease-out';
-    
+
+    // Use Utils animation helper for reduced motion support
+    if (!Utils.animation.prefersReducedMotion()) {
+        container.style.animation = 'slideIn 0.3s ease-out';
+    }
+
     switch(gameName) {
         case 'click-speed': initClickSpeed(); break;
         case 'type-speed': initTypeSpeed(); break;
@@ -425,6 +641,10 @@ function loadGame(gameName) {
 
 function backToMenu() {
     SoundSystem.playClick();
+
+    // Clean up all timers to prevent memory leaks
+    Utils.timers.clearAll();
+
     if (currentGame) {
         ScoreTracker.capture(currentGame);
     }
@@ -515,26 +735,26 @@ function initClickSpeed() {
 }
 
 function startClickTest() {
-    const duration = parseInt(document.getElementById('click-duration').value);
+    const duration = Utils.input.parseInt(document.getElementById('click-duration').value, 10);
     const clickArea = document.getElementById('click-area');
     let clicks = 0;
     let startTime = Date.now();
     let interval;
-    
+
     clickArea.textContent = 'CLICK NOW!';
     clickArea.style.backgroundColor = 'var(--bg-tertiary)';
-    
+
     function updateStats() {
         const elapsed = Math.min((Date.now() - startTime) / 1000, duration);
         const timeLeft = Math.max(0, duration - elapsed);
         const cps = elapsed > 0 ? (clicks / elapsed).toFixed(2) : 0;
-        
+
         document.getElementById('click-count').textContent = clicks;
         document.getElementById('cps').textContent = cps;
         document.getElementById('time-left').textContent = timeLeft.toFixed(1);
-        
+
         if (elapsed >= duration) {
-            clearInterval(interval);
+            Utils.timers.clearInterval(interval);
             clickArea.style.backgroundColor = 'var(--bg-secondary)';
             clickArea.textContent = `Done! ${clicks} clicks (${cps} CPS) — Click to play again!`;
             saveClickRecord(duration, clicks, parseFloat(cps));
@@ -547,7 +767,7 @@ function startClickTest() {
             };
         }
     }
-    
+
     clickArea.onclick = (e) => {
         const rect = clickArea.getBoundingClientRect();
         createClickRipple(clickArea, e.clientX - rect.left, e.clientY - rect.top);
@@ -555,30 +775,30 @@ function startClickTest() {
         clicks++;
         updateStats();
     };
-    
-    interval = setInterval(updateStats, 50);
+
+    interval = Utils.timers.setInterval(updateStats, 50);
     updateStats();
 }
 
 function saveClickRecord(duration, clicks, cps) {
-    let records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    let records = Utils.storage.get('clickRecords', []);
     records.push({ duration, clicks, cps, date: new Date().toISOString() });
     records.sort((a, b) => b.cps - a.cps);
     records = records.slice(0, 10);
-    localStorage.setItem('clickRecords', JSON.stringify(records));
+    Utils.storage.set('clickRecords', records);
 }
 
 function loadClickRecords() {
-    const records = JSON.parse(localStorage.getItem('clickRecords') || '[]');
+    const records = Utils.storage.get('clickRecords', []);
     const container = document.getElementById('click-records');
     const leaderboard = document.getElementById('click-leaderboard');
-    
+
     if (records.length > 0) {
         leaderboard.style.display = 'block';
         container.innerHTML = records.map((r, i) => `
             <div class="leaderboard-entry">
-                <span class="rank">#${i + 1} - ${r.duration}s</span>
-                <span class="score-display">${r.clicks} clicks (${r.cps.toFixed(2)} CPS)</span>
+                <span class="rank">#${i + 1} - ${Utils.input.sanitizeHTML(r.duration + 's')}</span>
+                <span class="score-display">${Utils.input.sanitizeHTML(r.clicks + '')} clicks (${Utils.input.sanitizeHTML(r.cps.toFixed(2))} CPS)</span>
             </div>
         `).join('');
     }
@@ -1108,12 +1328,15 @@ function initMath() {
         <div style="text-align: center; margin: 20px 0;">
             <input type="number" id="math-answer" placeholder="Type answer to start" style="width: 200px; font-size: 32px; text-align: center;">
         </div>
-        <button id="math-submit" onclick="submitMathAnswer()" style="display: none;">SUBMIT</button>
+        <button id="math-submit" class="button" style="display: none;">SUBMIT</button>
     `;
-    
+
     const input = document.getElementById('math-answer');
     let started = false;
-    
+
+    // Remove inline onclick handler - will be set up in startMathTest
+    document.getElementById('math-submit').onclick = null;
+
     input.addEventListener('input', () => {
         if (!started && input.value) {
             started = true;
@@ -1123,26 +1346,30 @@ function initMath() {
 }
 
 function startMathTest() {
-    const difficulty = document.getElementById('math-difficulty').value;
-    const timeLimit = parseInt(document.getElementById('math-time').value);
+    const difficulty = Utils.input.validateOption(
+        document.getElementById('math-difficulty').value,
+        ['easy', 'medium', 'hard'],
+        'medium'
+    );
+    const timeLimit = Utils.input.parseInt(document.getElementById('math-time').value, 60);
     let score = 0;
     let startTime = Date.now();
     let currentAnswer;
-    
+
     document.getElementById('math-submit').style.display = 'inline-block';
-    
+
     function generateQuestion() {
         const elapsed = (Date.now() - startTime) / 1000;
         const timeLeft = Math.max(0, timeLimit - elapsed);
         document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
-        
+
         if (timeLeft <= 0) {
             document.getElementById('math-question').textContent = `Time's up! Final Score: ${score}`;
             document.getElementById('math-answer').disabled = true;
             document.getElementById('math-submit').style.display = 'none';
             return;
         }
-        
+
         let a, b, op, question;
         if (difficulty === 'easy') {
             a = Math.floor(Math.random() * 20) + 1;
@@ -1157,7 +1384,7 @@ function startMathTest() {
             b = Math.floor(Math.random() * 100) + 20;
             op = ['+', '-', '*', '/'][Math.floor(Math.random() * 4)];
         }
-        
+
         if (op === '+') currentAnswer = a + b;
         else if (op === '-') currentAnswer = a - b;
         else if (op === '*') currentAnswer = a * b;
@@ -1165,33 +1392,40 @@ function startMathTest() {
             currentAnswer = Math.floor(a / b);
             question = `${a} ${op} ${b} (round down)`;
         }
-        
+
         if (!question) question = `${a} ${op} ${b}`;
         document.getElementById('math-question').textContent = question + ' = ?';
         document.getElementById('math-answer').value = '';
         document.getElementById('math-answer').focus();
     }
-    
-    window.submitMathAnswer = function() {
-        const userAnswer = parseInt(document.getElementById('math-answer').value);
-        if (userAnswer === currentAnswer) {
+
+    const submitAnswer = function() {
+        const userAnswer = Utils.input.parseInt(document.getElementById('math-answer').value, NaN);
+        // Only accept valid numbers
+        if (!isNaN(userAnswer) && userAnswer === currentAnswer) {
             score++;
             document.getElementById('math-score').textContent = score;
+            SoundSystem.playSuccess();
+        } else if (!isNaN(userAnswer)) {
+            SoundSystem.playFailure();
         }
         generateQuestion();
     };
-    
+
+    // Replace window assignment with direct event listener
+    document.getElementById('math-submit').onclick = submitAnswer;
+
     document.getElementById('math-answer').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') submitMathAnswer();
+        if (e.key === 'Enter') submitAnswer();
     });
-    
-    const timerInterval = setInterval(() => {
+
+    const timerInterval = Utils.timers.setInterval(() => {
         const elapsed = (Date.now() - startTime) / 1000;
         const timeLeft = Math.max(0, timeLimit - elapsed);
         document.getElementById('math-timer').textContent = timeLeft.toFixed(1);
-        if (timeLeft <= 0) clearInterval(timerInterval);
+        if (timeLeft <= 0) Utils.timers.clearInterval(timerInterval);
     }, 100);
-    
+
     generateQuestion();
 }
 
